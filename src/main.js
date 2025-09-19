@@ -1,7 +1,7 @@
 import './styles.css';
 
 const WEEKS_PER_MONTH = 52 / 12;
-const DEFAULT_SIM_MINUTES_PER_SECOND = 12;
+const DEFAULT_SIM_MINUTES_PER_SECOND = 1;
 const ATV_COLORS = ['#64ffda', '#90caf9', '#ffd54f', '#ff8a80', '#ce93d8', '#80cbc4'];
 
 const DEFAULT_PARAMS = {
@@ -644,11 +644,22 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.moveTo(padding, beachBottom);
     ctx.lineTo(width - padding, beachBottom);
     ctx.stroke();
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.font = '16px "Inter", sans-serif';
+    const labelY = Math.min(height - 12, beachBottom + 28);
+    const beachLengthLabel = formatNumber(paramsRef.beachLengthM, { maximumFractionDigits: 0 });
+    ctx.fillText(`Beach length = ${beachLengthLabel} m`, width / 2, labelY);
+    ctx.restore();
   }
 
   function drawSargassum(simMinutes) {
     const widthAvailable = width - padding * 2;
     const beachHeight = beachBottom - beachTop;
+    const sargassumHeight = beachHeight * 0.25;
+    const sargassumTop = beachBottom - sargassumHeight;
 
     simulation.loadStates.forEach((state) => {
       const xStart = padding + (state.startPosM / simulation.beachLength) * widthAvailable;
@@ -669,12 +680,12 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
 
       ctx.save();
       ctx.globalAlpha = alpha;
-      const grad = ctx.createLinearGradient(xStart, beachTop, xEnd, beachBottom);
+      const grad = ctx.createLinearGradient(xStart, sargassumTop, xEnd, beachBottom);
       grad.addColorStop(0, 'rgba(121, 85, 72, 0.92)');
       grad.addColorStop(0.5, 'rgba(93, 64, 55, 0.95)');
       grad.addColorStop(1, 'rgba(121, 85, 72, 0.92)');
       ctx.fillStyle = grad;
-      ctx.fillRect(xStart, beachTop, xEnd - xStart, beachHeight);
+      ctx.fillRect(xStart, sargassumTop, xEnd - xStart, sargassumHeight);
       ctx.restore();
     });
   }
