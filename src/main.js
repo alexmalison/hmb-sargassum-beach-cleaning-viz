@@ -735,6 +735,75 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.setLineDash([]);
   }
 
+  function drawAtvWithTrailer(x, y, color) {
+    ctx.save();
+
+    const wheelRadius = 5;
+    const bodyWidth = 36;
+    const bodyHeight = 14;
+    const trailerWidth = 28;
+    const trailerHeight = 12;
+    const hitchLength = 8;
+
+    const bodyLeft = x - bodyWidth / 2;
+    const bodyTop = y - wheelRadius - bodyHeight;
+    const bodyRight = bodyLeft + bodyWidth;
+
+    const trailerLeft = bodyLeft - hitchLength - trailerWidth;
+    const trailerTop = y - wheelRadius - trailerHeight + 2;
+    const trailerRight = trailerLeft + trailerWidth;
+
+    ctx.fillStyle = color;
+    ctx.fillRect(bodyLeft, bodyTop, bodyWidth, bodyHeight);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.fillRect(bodyLeft + 6, bodyTop + 3, 12, bodyHeight - 6);
+
+    ctx.fillStyle = color;
+    ctx.fillRect(trailerLeft, trailerTop, trailerWidth, trailerHeight);
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(bodyLeft, y - wheelRadius - 2);
+    ctx.lineTo(trailerRight, y - wheelRadius + 1);
+    ctx.stroke();
+
+    const hubColor = 'rgba(15, 32, 52, 0.85)';
+
+    const wheels = [
+      { x: bodyLeft + 8, y },
+      { x: bodyRight - 8, y },
+      { x: trailerLeft + trailerWidth * 0.25, y: y + 1 },
+      { x: trailerRight - trailerWidth * 0.2, y: y + 1 },
+    ];
+
+    ctx.fillStyle = hubColor;
+    wheels.forEach((wheel) => {
+      ctx.beginPath();
+      ctx.arc(wheel.x, wheel.y, wheelRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.beginPath();
+      ctx.arc(wheel.x, wheel.y, wheelRadius * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = hubColor;
+    });
+
+    ctx.fillStyle = 'rgba(15, 32, 52, 0.85)';
+    ctx.fillRect(bodyRight - 10, bodyTop - 6, 12, 6);
+
+    ctx.beginPath();
+    ctx.moveTo(bodyLeft + bodyWidth * 0.4, bodyTop);
+    ctx.lineTo(bodyLeft + bodyWidth * 0.7, bodyTop - 8);
+    ctx.lineTo(bodyLeft + bodyWidth * 0.85, bodyTop - 8);
+    ctx.lineTo(bodyLeft + bodyWidth * 0.7, bodyTop);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
   function drawAtvs(simMinutes) {
     const details = [];
 
@@ -744,19 +813,11 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
       const x = padding + (position / simulation.beachLength) * (width - padding * 2);
       const y = beachBottom - 30 - (index * 18);
 
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(x, y, 9, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = 'rgba(15, 32, 52, 0.8)';
-      ctx.beginPath();
-      ctx.arc(x, y, 5, 0, Math.PI * 2);
-      ctx.fill();
+      drawAtvWithTrailer(x, y, color);
 
       ctx.fillStyle = color;
       ctx.font = '12px "Inter", sans-serif';
-      ctx.fillText(`ATV ${index + 1}`, x - 20, y + 20);
+      ctx.fillText(`ATV ${index + 1}`, x - 20, y + 22);
 
       const loadState = loadId
         ? simulation.loadStates.find((state) => state.loadId === loadId)
