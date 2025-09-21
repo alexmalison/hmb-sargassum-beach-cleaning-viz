@@ -9,7 +9,7 @@ const DEFAULT_PARAMS = {
   sargassumVolumeM3: 7183.15,
   workDaysPerWeek: 6,
   workHoursPerDay: 5,
-  trailerCapacityM3: 1.982179261,
+  trailerCapacityM3: 2.0,
   timePerWorkerLoadM3Minutes: 25,
   atvSpeedKmh: 3,
   beachLengthM: 600,
@@ -58,12 +58,12 @@ const INPUTS = [
     label: 'Trailer capacity (m³)',
     min: 0.1,
     max: 5,
-    step: 0.01,
+    step: 0.1,
     section: 'labor',
   },
   {
     key: 'timePerWorkerLoadM3Minutes',
-    label: 'Time to load 1 m³ (minutes)',
+    label: 'Time to load 1 m³ per worker (minutes)',
     min: 1,
     max: 60,
     step: 1,
@@ -503,26 +503,77 @@ function createLayout() {
 function renderInputs(params, onChange) {
   INPUTS.forEach((config) => {
     const parent = document.querySelector(`[data-section="${config.section}"]`);
+    if (!parent) {
+      return;
+    }
+
     const wrapper = document.createElement('div');
     wrapper.className = 'field';
 
     const label = document.createElement('label');
     label.textContent = config.label;
 
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.value = params[config.key];
-    if (config.min !== undefined) input.min = String(config.min);
-    if (config.max !== undefined) input.max = String(config.max);
-    if (config.step !== undefined) input.step = String(config.step);
+    let input;
 
-    input.addEventListener('input', () => {
-      const value = Number(input.value);
-      if (!Number.isFinite(value)) {
-        return;
+    if (config.type === 'select' && Array.isArray(config.options)) {
+      input = document.createElement('select');
+      config.options.forEach((option) => {
+        const optEl = document.createElement('option');
+        optEl.value = String(option.value);
+        optEl.textContent = option.label;
+        input.append(optEl);
+      });
+      input.value = String(params[config.key]);
+      input.addEventListener('change', () => {
+        const raw = input.value;
+        const numeric = Number(raw);
+        const allNumeric = config.options.every((option) => typeof option.value === 'number');
+        const value = allNumeric && Number.isFinite(numeric) ? numeric : raw;
+        onChange(config.key, value);
+      });
+    } else {
+      input = document.createElement('input');
+      const inputType = config.type === 'text' ? 'text' : 'number';
+      input.type = inputType;
+
+      if (config.key === 'trailerCapacityM3') {
+        input.value = Number(params[config.key] ?? 0).toFixed(1);
+      } else {
+        input.value = String(params[config.key] ?? '');
       }
-      onChange(config.key, value);
-    });
+
+      if (config.placeholder) {
+        input.placeholder = config.placeholder;
+      }
+
+      if (inputType === 'number') {
+        if (config.min !== undefined) input.min = String(config.min);
+        if (config.max !== undefined) input.max = String(config.max);
+        if (config.step !== undefined) input.step = String(config.step);
+
+        const handleUpdate = () => {
+          const value = Number(input.value);
+          if (!Number.isFinite(value)) {
+            return;
+          }
+          onChange(config.key, value);
+          if (config.key === 'trailerCapacityM3') {
+            input.value = value.toFixed(1);
+          }
+        };
+
+        if (config.key === 'trailerCapacityM3') {
+          input.addEventListener('change', handleUpdate);
+          input.addEventListener('blur', handleUpdate);
+        } else {
+          input.addEventListener('input', handleUpdate);
+        }
+      } else {
+        input.addEventListener('input', () => {
+          onChange(config.key, input.value);
+        });
+      }
+    }
 
     wrapper.append(label, input);
     parent.append(wrapper);
@@ -823,7 +874,11 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
         ? simulation.loadStates.find((state) => state.loadId === loadId)
         : undefined;
       const crewLabel = loadState?.crew ?? 'Crew';
-      details.push(`ATV ${index + 1}: ${phase} load ${loadId ?? '—'} (${crewLabel})`);
+      const capacityLabel = formatNumber(paramsRef.trailerCapacityM3, {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      });
+      details.push(`ATV ${index + 1}: ${phase} load ${loadId ?? '—'} (${crewLabel}, capacity ${capacityLabel} m³)`);
     });
 
     detailsLabel.textContent = details.join('  •  ');
