@@ -510,12 +510,10 @@ function createLayout() {
         <canvas id="beachCanvas" width="960" height="520"></canvas>
         <div class="canvas-overlay canvas-overlay-top">
           <div class="sim-controls">
-            <div class="sim-primary">
-              <span id="timeLabel" class="sim-time">Sim time 00:00</span>
-              <button type="button" id="toggleRun" class="toggle-run">Pause</button>
-            </div>
-            <span id="loadedLabel" class="sim-loaded">Loaded 0.0 m³</span>
-            <span id="idleLabel" class="sim-idle">Crew idle time 00:00:00</span>
+            <button type="button" id="toggleRun" class="toggle-run">Pause</button>
+            <span id="timeLabel" class="sim-stat">Sim time 00:00:00</span>
+            <span id="loadedLabel" class="sim-stat">Loaded 0.0 m³</span>
+            <span id="idleLabel" class="sim-stat">Crew idle time 00:00:00</span>
           </div>
           <div class="speed-slider">
             <input type="range" id="speedSlider" min="1" max="60" step="1" />
