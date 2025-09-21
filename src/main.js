@@ -980,7 +980,7 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     const widthAvailable = width - padding * 2;
     const beachHeight = beachBottom - beachTop;
     const sargassumHeight = beachHeight * 0.25;
-    const sargassumTop = beachBottom - sargassumHeight;
+    const sargassumTop = beachTop;
 
     simulation.loadStates.forEach((state) => {
       const xStart = padding + (state.startPosM / simulation.beachLength) * widthAvailable;
