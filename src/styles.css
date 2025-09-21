@@ -122,10 +122,61 @@
   color: inherit;
 }
 
+.field select {
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(130, 178, 255, 0.35);
+  font-size: 0.85rem;
+  background: rgba(11, 23, 38, 0.7);
+  color: inherit;
+  appearance: none;
+}
+
 .field input:focus {
   outline: none;
   border-color: rgba(130, 178, 255, 0.85);
   box-shadow: 0 0 0 2px rgba(130, 178, 255, 0.2);
+}
+
+.field select:focus {
+  outline: none;
+  border-color: rgba(130, 178, 255, 0.85);
+  box-shadow: 0 0 0 2px rgba(130, 178, 255, 0.2);
+}
+
+.field input:disabled,
+.field select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.override-field {
+  gap: 0.45rem;
+}
+
+.override-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.override-controls select {
+  min-width: 90px;
+}
+
+.override-controls input {
+  flex: 1;
+}
+
+.field-note {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(244, 246, 248, 0.55);
+}
+
+.field input::placeholder,
+.field select::placeholder {
+  color: rgba(244, 246, 248, 0.4);
 }
 
 .metrics-list {

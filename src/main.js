@@ -18,6 +18,8 @@ const DEFAULT_PARAMS = {
 
 const DEFAULT_SETTINGS = {
   minutesPerSecond: DEFAULT_SIM_MINUTES_PER_SECOND,
+  atvOverrideEnabled: false,
+  atvOverrideCount: null,
 };
 
 const INPUTS = [
@@ -241,9 +243,13 @@ function computeDerived(params) {
   };
 }
 
-function buildSimulation(params, derived) {
+function buildSimulation(params, derived, options = {}) {
   const numLoads = derived.integerLoads;
-  const numAtvs = derived.integerAtvs;
+  const rawOverrideAtvs = Number(options.overrideAtvCount);
+  const manualAtvs = Number.isFinite(rawOverrideAtvs) && rawOverrideAtvs > 0
+    ? Math.max(1, Math.round(rawOverrideAtvs))
+    : null;
+  const numAtvs = manualAtvs ?? derived.integerAtvs;
   const loadMarkers = [];
   const loadStates = [];
   const segmentsByAtv = Array.from({ length: numAtvs }, () => []);
@@ -435,6 +441,7 @@ function buildSimulation(params, derived) {
     numLoads,
     numAtvs,
     loadStates,
+    overrideAtvCount: manualAtvs,
   };
 }
 
@@ -458,10 +465,27 @@ function createLayout() {
         <div class="control-group">
           <h2>ATV Operations</h2>
           <div class="input-grid" data-section="atv"></div>
+          <div class="field override-field">
+            <label for="atvOverrideToggle">Override # of ATVs</label>
+            <div class="override-controls">
+              <select id="atvOverrideToggle">
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+              <input
+                type="number"
+                id="atvOverrideInput"
+                min="1"
+                step="1"
+                placeholder="Manual count"
+              />
+            </div>
+            <span class="field-note" id="atvOverrideHint"></span>
+          </div>
         </div>
       </div>
       <div class="speed-control">
-        <label for="speedSlider">Visualization speed</label>
+        <label for="speedSlider">Simulation speed (1 s real = ? min sim)</label>
         <div class="speed-slider">
           <input type="range" id="speedSlider" min="1" max="60" step="1" />
           <span id="speedValue"></span>
@@ -497,6 +521,9 @@ function createLayout() {
     derivedToggle: document.querySelector('#toggleDerived'),
     speedSlider: document.querySelector('#speedSlider'),
     speedValue: document.querySelector('#speedValue'),
+    atvOverrideToggle: document.querySelector('#atvOverrideToggle'),
+    atvOverrideInput: document.querySelector('#atvOverrideInput'),
+    atvOverrideHint: document.querySelector('#atvOverrideHint'),
   };
 }
 
@@ -588,7 +615,8 @@ function renderSpeedControl(settings, onChange) {
   }
 
   const applyValue = (value) => {
-    valueEl.textContent = `${value.toFixed(0)} min/sec`;
+    const rounded = Math.max(1, Math.round(value));
+    valueEl.textContent = `1 s → ${rounded} min`;
     onChange(value);
   };
 
@@ -605,10 +633,79 @@ function renderSpeedControl(settings, onChange) {
   });
 }
 
+function renderAtvOverrideControl(settings, refresh, elements = {}) {
+  const toggle = elements.toggle ?? document.querySelector('#atvOverrideToggle');
+  const input = elements.input ?? document.querySelector('#atvOverrideInput');
+  if (!toggle || !input) {
+    return;
+  }
+
+  const syncInputDisabled = (enabled) => {
+    input.disabled = !enabled;
+    if (!enabled) {
+      settings.atvOverrideCount = null;
+      input.value = '';
+    }
+  };
+
+  toggle.value = settings.atvOverrideEnabled ? 'yes' : 'no';
+
+  if (settings.atvOverrideCount != null) {
+    input.value = String(settings.atvOverrideCount);
+  }
+  syncInputDisabled(settings.atvOverrideEnabled);
+
+  toggle.addEventListener('change', () => {
+    const enabled = toggle.value === 'yes';
+    settings.atvOverrideEnabled = enabled;
+    if (enabled && !input.value) {
+      const computed = Number(toggle.dataset.computedAtvs);
+      if (Number.isFinite(computed) && computed > 0) {
+        settings.atvOverrideCount = Math.max(1, Math.round(computed));
+        input.value = String(settings.atvOverrideCount);
+      }
+    }
+    syncInputDisabled(enabled);
+    refresh();
+  });
+
+  const commitInputValue = () => {
+    if (!settings.atvOverrideEnabled) {
+      return;
+    }
+
+    const parsed = Number(input.value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      settings.atvOverrideCount = null;
+      input.value = '';
+      refresh();
+      return;
+    }
+
+    settings.atvOverrideCount = Math.round(parsed);
+    input.value = String(settings.atvOverrideCount);
+    refresh();
+  };
+
+  input.addEventListener('blur', commitInputValue);
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      commitInputValue();
+    }
+  });
+}
+
 function renderDerived(listEl, derived, totals) {
   listEl.innerHTML = '';
   DERIVED_METRICS.forEach((metric) => {
-    const value = metric.key === 'totalMinutes' ? totals.totalMinutes : derived[metric.key];
+    let value;
+    if (metric.key === 'totalMinutes') {
+      value = totals.totalMinutes;
+    } else if (metric.key === 'integerAtvs') {
+      value = totals.integerAtvs ?? derived.integerAtvs;
+    } else {
+      value = derived[metric.key];
+    }
     const li = document.createElement('li');
     li.className = 'metric-card';
 
@@ -622,7 +719,13 @@ function renderDerived(listEl, derived, totals) {
 
     li.append(label, valueEl);
 
-    if (metric.note) {
+    if (metric.key === 'integerAtvs' && totals.overrideAtvs) {
+      const note = document.createElement('span');
+      note.className = 'note';
+      const computedLabel = formatNumber(totals.computedIntegerAtvs, { maximumFractionDigits: 0 });
+      note.textContent = `Manual override active (computed ${computedLabel})`;
+      li.append(note);
+    } else if (metric.note) {
       const note = document.createElement('span');
       note.className = 'note';
       note.textContent = metric.note;
@@ -674,7 +777,39 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     const minutes = Math.floor(simMinutes % 60);
     const seconds = Math.floor((simMinutes % 1) * 60);
     const timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    timeLabel.textContent = `Sim time ${timeString}`;
+    const label = `Sim time ${timeString}`;
+
+    if (timeLabel) {
+      timeLabel.textContent = label;
+    }
+
+    ctx.save();
+    ctx.font = '18px "Inter", sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+
+    const metrics = ctx.measureText(label);
+    const textWidth = metrics.width;
+    const textHeight = (metrics.actualBoundingBoxAscent ?? 0) + (metrics.actualBoundingBoxDescent ?? 0);
+    const boxPaddingX = 12;
+    const boxPaddingY = 6;
+    const boxWidth = textWidth + boxPaddingX * 2;
+    const boxHeight = (textHeight || 16) + boxPaddingY * 2;
+
+    const boxX = padding;
+    const boxY = Math.max(16, (beachTop - boxHeight) - 12);
+
+    ctx.fillStyle = 'rgba(11, 23, 38, 0.78)';
+    ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+    ctx.strokeStyle = 'rgba(244, 246, 248, 0.18)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+    ctx.fillStyle = 'rgba(244, 246, 248, 0.92)';
+    ctx.fillText(label, boxX + boxPaddingX, boxY + boxPaddingY);
+
+    ctx.restore();
   }
 
   function drawBackground() {
@@ -933,20 +1068,48 @@ function main() {
     detailsLabel,
     derivedSection,
     derivedToggle,
+    atvOverrideToggle,
+    atvOverrideInput,
+    atvOverrideHint,
   } = createLayout();
   const animator = createAnimator(canvas, timeLabel, detailsLabel);
   let derivedCollapsed = false;
 
   function refresh() {
     const derived = computeDerived(params);
-    const simulation = buildSimulation(params, derived);
+    const overrideAtvCount = settings.atvOverrideEnabled ? settings.atvOverrideCount : null;
+    const simulation = buildSimulation(params, derived, { overrideAtvCount });
     const totals = {
       totalMinutes: simulation.totalMinutes,
+      integerAtvs: simulation.numAtvs,
+      overrideAtvs: simulation.overrideAtvCount != null,
+      computedIntegerAtvs: derived.integerAtvs,
     };
 
     renderDerived(derivedList, derived, totals);
     updateStatus(status, params, derived);
     animator.update(simulation, params);
+
+    if (atvOverrideHint) {
+      const computedLabel = formatNumber(derived.integerAtvs, { maximumFractionDigits: 0 });
+      if (simulation.overrideAtvCount != null) {
+        const manualLabel = formatNumber(simulation.overrideAtvCount, { maximumFractionDigits: 0 });
+        atvOverrideHint.textContent = `Manual override active (${manualLabel} ATVs, computed ${computedLabel}).`;
+      } else {
+        atvOverrideHint.textContent = `Using computed requirement (${computedLabel} ATVs).`;
+      }
+    }
+
+    if (atvOverrideToggle) {
+      atvOverrideToggle.dataset.computedAtvs = String(derived.integerAtvs);
+    }
+
+    if (atvOverrideInput) {
+      const computedLabel = formatNumber(derived.integerAtvs, { maximumFractionDigits: 0 });
+      if (!settings.atvOverrideEnabled || settings.atvOverrideCount == null) {
+        atvOverrideInput.placeholder = `Computed ${computedLabel}`;
+      }
+    }
   }
 
   renderInputs(params, (key, value) => {
@@ -956,6 +1119,11 @@ function main() {
 
   renderSpeedControl(settings, (value) => {
     animator.updateSpeed(value);
+  });
+
+  renderAtvOverrideControl(settings, refresh, {
+    toggle: atvOverrideToggle,
+    input: atvOverrideInput,
   });
 
   derivedToggle.addEventListener('click', () => {
