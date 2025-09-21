@@ -507,7 +507,7 @@ function createLayout() {
     </section>
     <section class="simulation">
       <div class="canvas-container">
-        <canvas id="beachCanvas" width="960" height="520"></canvas>
+        <canvas id="beachCanvas" width="720" height="420"></canvas>
         <div class="canvas-overlay canvas-overlay-top">
           <div class="sim-controls">
             <button type="button" id="toggleRun" class="toggle-run">Pause</button>

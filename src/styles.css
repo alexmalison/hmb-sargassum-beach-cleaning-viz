@@ -246,8 +246,8 @@
 }
 
 canvas {
-  width: min(960px, 100%);
-  height: min(460px, 62vh);
+  width: min(720px, 100%);
+  height: min(420px, 60vh);
   background: linear-gradient(180deg, rgba(244, 246, 248, 0.12) 0%, rgba(39, 82, 138, 0.35) 100%);
   border-radius: 16px;
   border: 1px solid rgba(244, 246, 248, 0.18);
@@ -375,6 +375,6 @@ canvas {
   }
 
   canvas {
-    height: min(380px, 50vh);
+    height: min(320px, 45vh);
   }
 }
