@@ -484,13 +484,6 @@ function createLayout() {
           </div>
         </div>
       </div>
-      <div class="speed-control">
-        <label for="speedSlider">Simulation speed (1 s real = ? min sim)</label>
-        <div class="speed-slider">
-          <input type="range" id="speedSlider" min="1" max="60" step="1" />
-          <span id="speedValue"></span>
-        </div>
-      </div>
       <div class="derived-section" id="derivedSection">
         <div class="derived-header">
           <h2>Derived Metrics</h2>
@@ -506,6 +499,13 @@ function createLayout() {
         <div class="overlay">
           <span id="timeLabel">00:00</span>
           <span id="detailsLabel"></span>
+        </div>
+      </div>
+      <div class="speed-control">
+        <label for="speedSlider">Simulation speed (1 s real = ? min sim)</label>
+        <div class="speed-slider">
+          <input type="range" id="speedSlider" min="1" max="60" step="1" />
+          <span id="speedValue"></span>
         </div>
       </div>
     </section>
