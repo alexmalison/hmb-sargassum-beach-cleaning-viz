@@ -993,8 +993,10 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
       }
 
       const fullBeachGrad = ctx.createLinearGradient(xStart, sargassumTop, xEnd, beachBottom);
-      fullBeachGrad.addColorStop(0, 'rgba(194, 178, 128, 0.65)');
-      fullBeachGrad.addColorStop(1, 'rgba(214, 198, 148, 0.7)');
+      fullBeachGrad.addColorStop(0, 'rgba(194, 178, 128, 0.68)');
+      fullBeachGrad.addColorStop(0.55, 'rgba(214, 198, 148, 0.74)');
+      fullBeachGrad.addColorStop(0.75, 'rgba(118, 213, 237, 0.8)');
+      fullBeachGrad.addColorStop(1, 'rgba(76, 195, 255, 0.85)');
       ctx.save();
       ctx.fillStyle = fullBeachGrad;
       ctx.fillRect(xStart, sargassumTop, xEnd - xStart, sargassumHeight);
