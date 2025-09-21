@@ -945,18 +945,17 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.fillStyle = '#0f2034';
     ctx.fillRect(0, 0, width, height);
 
-    const oceanHeight = height - beachBottom;
-    if (oceanHeight > 0) {
-      const oceanGrad = ctx.createLinearGradient(0, beachBottom - oceanHeight, 0, beachBottom);
-      oceanGrad.addColorStop(0, 'rgba(12, 97, 141, 0.85)');
-      oceanGrad.addColorStop(1, 'rgba(9, 128, 164, 0.9)');
-      ctx.fillStyle = oceanGrad;
-      ctx.fillRect(padding, beachBottom - oceanHeight, width - padding * 2, oceanHeight);
-    }
+    const oceanGrad = ctx.createLinearGradient(0, 0, 0, beachTop);
+    oceanGrad.addColorStop(0, 'rgba(183, 244, 255, 0.96)');
+    oceanGrad.addColorStop(0.35, 'rgba(133, 226, 255, 0.94)');
+    oceanGrad.addColorStop(0.7, 'rgba(82, 204, 255, 0.97)');
+    oceanGrad.addColorStop(1, 'rgba(36, 152, 233, 0.99)');
+    ctx.fillStyle = oceanGrad;
+    ctx.fillRect(0, 0, width, beachTop);
 
     const sandGrad = ctx.createLinearGradient(0, beachTop, 0, beachBottom);
-    sandGrad.addColorStop(0, 'rgba(194, 178, 128, 0.65)');
-    sandGrad.addColorStop(1, 'rgba(214, 198, 148, 0.7)');
+    sandGrad.addColorStop(0, 'rgba(214, 196, 148, 0.78)');
+    sandGrad.addColorStop(1, 'rgba(191, 166, 115, 0.82)');
     ctx.fillStyle = sandGrad;
     ctx.fillRect(padding, beachTop, width - padding * 2, beachBottom - beachTop);
 
