@@ -512,8 +512,6 @@ function createLayout() {
           <div class="sim-controls">
             <button type="button" id="toggleRun" class="toggle-run">Pause</button>
             <span id="timeLabel" class="sim-stat">Sim time 00:00:00</span>
-            <span id="loadedLabel" class="sim-stat">Loaded 0.0 m³</span>
-            <span id="idleLabel" class="sim-stat">Crew idle time 00:00:00</span>
           </div>
           <div class="speed-slider">
             <input type="range" id="speedSlider" min="1" max="60" step="1" />
@@ -532,8 +530,6 @@ function createLayout() {
     derivedList: document.querySelector('#derivedMetrics'),
     status: document.querySelector('#status'),
     timeLabel: document.querySelector('#timeLabel'),
-    loadedLabel: document.querySelector('#loadedLabel'),
-    idleLabel: document.querySelector('#idleLabel'),
     toggleButton: document.querySelector('#toggleRun'),
     detailsLabel: document.querySelector('#detailsLabel'),
     derivedSection: document.querySelector('#derivedSection'),
@@ -730,7 +726,7 @@ function renderDerived(listEl, derived, totals) {
   });
 }
 
-function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel) {
+function createAnimator(canvas, timeLabel, detailsLabel) {
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
   const height = canvas.height;
@@ -756,6 +752,8 @@ function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel)
   let frameHandle = null;
   let loadingTimeline = [];
   const stateListeners = new Set();
+  let lastLoadedLabel = 'Loaded 0.0 m³';
+  let lastIdleLabel = 'Crew idle time 00:00:00';
 
   const beachTop = height * 0.3;
   const beachBottom = height * 0.7;
@@ -796,8 +794,8 @@ function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel)
     autoPaused = false;
     loadingTimeline = buildLoadingTimeline(simulation.loadStates ?? []);
     drawTimestamp(simElapsedMinutes);
-    drawLoaded(simElapsedMinutes);
-    drawIdle(simElapsedMinutes);
+    updateLoaded(simElapsedMinutes);
+    updateIdle(simElapsedMinutes);
     notifyStateChange();
     ensureLoopRunning();
   }
@@ -906,14 +904,10 @@ function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel)
     }
   }
 
-  function drawLoaded(simMinutes) {
-    if (!loadedLabel) {
-      return;
-    }
-
+  function updateLoaded(simMinutes) {
     const capacity = Number(paramsRef.trailerCapacityM3) || 0;
     if (capacity <= 0 || !Array.isArray(simulation.loadStates)) {
-      loadedLabel.textContent = 'Loaded 0.0 m³';
+      lastLoadedLabel = 'Loaded 0.0 m³';
       return;
     }
 
@@ -937,16 +931,13 @@ function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel)
       minimumFractionDigits: 1,
       maximumFractionDigits: 1,
     });
-    loadedLabel.textContent = `Loaded ${volumeLabel} m³`;
+    lastLoadedLabel = `Loaded ${volumeLabel} m³`;
   }
 
-  function drawIdle(simMinutes) {
-    if (!idleLabel) {
-      return;
-    }
+  function updateIdle(simMinutes) {
     const busyMinutes = getBusyMinutesUpTo(simMinutes);
     const idleMinutes = Math.max(0, simMinutes - busyMinutes);
-    idleLabel.textContent = `Crew idle time ${formatClock(idleMinutes)}`;
+    lastIdleLabel = `Crew idle time ${formatClock(idleMinutes)}`;
   }
 
   function drawBackground() {
@@ -974,7 +965,12 @@ function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel)
     ctx.font = '16px "Inter", sans-serif';
     const labelY = Math.min(height - 12, beachBottom + 28);
     const beachLengthLabel = formatNumber(paramsRef.beachLengthM, { maximumFractionDigits: 0 });
-    ctx.fillText(`Beach length = ${beachLengthLabel} m`, width / 2, labelY);
+    const footerSegments = [
+      `Beach length = ${beachLengthLabel} m`,
+      lastLoadedLabel,
+      lastIdleLabel,
+    ];
+    ctx.fillText(footerSegments.join('   •   '), width / 2, labelY);
     ctx.restore();
   }
 
@@ -1315,8 +1311,8 @@ function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel)
     drawLoads();
     drawAtvs(simMinutes);
     drawTimestamp(simMinutes);
-    drawLoaded(simMinutes);
-    drawIdle(simMinutes);
+    updateLoaded(simMinutes);
+    updateIdle(simMinutes);
 
     if (simElapsedMinutes >= totalMinutes) {
       autoPaused = true;
@@ -1359,8 +1355,6 @@ function main() {
     derivedList,
     status,
     timeLabel,
-    loadedLabel,
-    idleLabel,
     toggleButton,
     detailsLabel,
     derivedSection,
@@ -1368,7 +1362,7 @@ function main() {
     atvOverrideInput,
     atvOverrideHint,
   } = createLayout();
-  const animator = createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel);
+  const animator = createAnimator(canvas, timeLabel, detailsLabel);
   let derivedCollapsed = false;
 
   function refresh() {
