@@ -945,7 +945,11 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.fillStyle = '#0f2034';
     ctx.fillRect(0, 0, width, height);
 
-    ctx.fillStyle = '#0f2034';
+    const duneGrad = ctx.createLinearGradient(0, 0, 0, beachTop);
+    duneGrad.addColorStop(0, 'rgba(236, 221, 180, 0.92)');
+    duneGrad.addColorStop(0.6, 'rgba(226, 205, 156, 0.9)');
+    duneGrad.addColorStop(1, 'rgba(212, 186, 134, 0.88)');
+    ctx.fillStyle = duneGrad;
     ctx.fillRect(0, 0, width, beachTop);
 
     const waterGrad = ctx.createLinearGradient(0, beachBottom, 0, height);
