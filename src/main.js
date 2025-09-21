@@ -945,12 +945,7 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.fillStyle = '#0f2034';
     ctx.fillRect(0, 0, width, height);
 
-    const oceanGrad = ctx.createLinearGradient(0, 0, 0, beachTop);
-    oceanGrad.addColorStop(0, 'rgba(183, 244, 255, 0.96)');
-    oceanGrad.addColorStop(0.35, 'rgba(133, 226, 255, 0.94)');
-    oceanGrad.addColorStop(0.7, 'rgba(82, 204, 255, 0.97)');
-    oceanGrad.addColorStop(1, 'rgba(36, 152, 233, 0.99)');
-    ctx.fillStyle = oceanGrad;
+    ctx.fillStyle = '#0f2034';
     ctx.fillRect(0, 0, width, beachTop);
 
     const sandGrad = ctx.createLinearGradient(0, beachTop, 0, beachBottom);
