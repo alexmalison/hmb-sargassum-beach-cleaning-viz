@@ -916,7 +916,7 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.setLineDash([]);
   }
 
-  function drawAtvWithTrailer(x, y, color, direction = 1) {
+  function drawAtvWithTrailer(x, y, color, direction = 1, hasLoad = false) {
     ctx.save();
 
     const wheelRadius = 5;
@@ -958,6 +958,28 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
 
     ctx.fillStyle = color;
     ctx.fillRect(trailerLeft, trailerTop, trailerWidth, trailerHeight);
+
+    if (hasLoad) {
+      const moundHeight = trailerHeight * 0.9;
+      const moundPadding = trailerWidth * 0.08;
+      const moundLeft = trailerLeft + moundPadding;
+      const moundRight = trailerRight - moundPadding;
+      const moundBaseY = trailerTop + 2;
+      const moundPeakY = moundBaseY - moundHeight;
+
+      ctx.fillStyle = '#8d6e63';
+      ctx.beginPath();
+      ctx.moveTo(moundLeft, moundBaseY);
+      ctx.quadraticCurveTo(
+        (moundLeft + moundRight) / 2,
+        moundPeakY,
+        moundRight,
+        moundBaseY,
+      );
+      ctx.lineTo(moundLeft, moundBaseY);
+      ctx.closePath();
+      ctx.fill();
+    }
 
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.lineWidth = 2;
@@ -1021,7 +1043,9 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
       const x = padding + (position / simulation.beachLength) * (width - padding * 2);
       const y = beachBottom - 30 - (index * 18);
 
-      drawAtvWithTrailer(x, y, color, orientationByAtv[index]);
+      const hasLoad = phase !== 'outbound';
+
+      drawAtvWithTrailer(x, y, color, orientationByAtv[index], hasLoad);
 
       ctx.fillStyle = color;
       ctx.font = '12px "Inter", sans-serif';
