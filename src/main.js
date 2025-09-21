@@ -14,6 +14,7 @@ const DEFAULT_PARAMS = {
   atvSpeedKmh: 3,
   beachLengthM: 600,
   loadTransferTimeMinutes: 11,
+  loadingMode: 'single',
 };
 
 const DEFAULT_SETTINGS = {
@@ -94,6 +95,16 @@ const INPUTS = [
     max: 60,
     step: 1,
     section: 'atv',
+  },
+  {
+    key: 'loadingMode',
+    label: 'Loading mode',
+    type: 'select',
+    options: [
+      { value: 'single', label: 'Whole crew from west' },
+      { value: 'split', label: 'Split crews west/east' },
+    ],
+    section: 'labor',
   },
 ];
 
@@ -288,24 +299,32 @@ function buildSimulation(params, derived, options = {}) {
 
   loadMarkers.push(...baseSegments.map((segment) => segment.centerPosM).sort((a, b) => a - b));
 
-  const orderedSegments = [];
-  let left = 0;
-  let right = numLoads - 1;
-  let useLeft = true;
+  let orderedSegments;
+  if ((params.loadingMode ?? 'single') === 'split') {
+    orderedSegments = [];
+    let left = 0;
+    let right = numLoads - 1;
+    let useLeft = true;
 
-  while (left <= right) {
-    if (useLeft) {
-      orderedSegments.push({ ...baseSegments[left], crew: 'West crew' });
-      left += 1;
-    } else {
-      orderedSegments.push({ ...baseSegments[right], crew: 'East crew' });
-      right -= 1;
+    while (left <= right) {
+      if (useLeft) {
+        orderedSegments.push({ ...baseSegments[left], crew: 'West crew' });
+        left += 1;
+      } else {
+        orderedSegments.push({ ...baseSegments[right], crew: 'East crew' });
+        right -= 1;
+      }
+      useLeft = !useLeft;
     }
-    useLeft = !useLeft;
-  }
 
-  if (orderedSegments.length && numLoads % 2 === 1) {
-    orderedSegments[orderedSegments.length - 1].crew = 'Both crews';
+    if (orderedSegments.length && numLoads % 2 === 1) {
+      orderedSegments[orderedSegments.length - 1].crew = 'Both crews';
+    }
+  } else {
+    orderedSegments = baseSegments.map((segment) => ({
+      ...segment,
+      crew: 'Main crew',
+    }));
   }
 
   orderedSegments.forEach((segmentPlan) => {
@@ -849,12 +868,24 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
 
   function getAtvState(segments, simMinutes, prevDirection = 1) {
     if (!segments.length) {
-      return { position: 0, phase: 'idle', loadId: null, direction: prevDirection };
+      return {
+        position: 0,
+        phase: 'idle',
+        loadId: null,
+        direction: prevDirection,
+        progress: 0,
+      };
     }
 
     const totalDuration = segments[segments.length - 1].endMin;
     if (totalDuration === 0) {
-      return { position: 0, phase: 'idle', loadId: null, direction: prevDirection };
+      return {
+        position: 0,
+        phase: 'idle',
+        loadId: null,
+        direction: prevDirection,
+        progress: 0,
+      };
     }
 
     let t = simMinutes % totalDuration;
@@ -868,6 +899,7 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
           phase: 'idle',
           loadId: segment.loadId,
           direction,
+          progress: 0,
         };
       }
       if (t <= segment.endMin || segment.endMin === segment.startMin) {
@@ -883,6 +915,7 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
           phase: segment.phase,
           loadId: segment.loadId,
           direction,
+          progress,
         };
       }
     }
@@ -897,6 +930,7 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
       phase: 'idle',
       loadId: finalSegment.loadId,
       direction,
+      progress: 0,
     };
   }
 
@@ -1037,13 +1071,20 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
 
     simulation.segmentsByAtv.forEach((segments, index) => {
       const prevDirection = orientationByAtv[index] ?? 1;
-      const { position, phase, loadId, direction } = getAtvState(segments, simMinutes, prevDirection);
+      const { position, phase, loadId, direction, progress } = getAtvState(segments, simMinutes, prevDirection);
       orientationByAtv[index] = direction || prevDirection || 1;
       const color = ATV_COLORS[index % ATV_COLORS.length];
       const x = padding + (position / simulation.beachLength) * (width - padding * 2);
       const y = beachBottom - 30 - (index * 18);
 
-      const hasLoad = phase !== 'outbound';
+      const epsilon = 0.001;
+      const hasLoad = (
+        (phase === 'loading' && progress >= 1 - epsilon)
+        || phase === 'return'
+        || phase === 'hold'
+        || phase === 'approach'
+        || (phase === 'transfer' && progress < 1 - epsilon)
+      );
 
       drawAtvWithTrailer(x, y, color, orientationByAtv[index], hasLoad);
 
