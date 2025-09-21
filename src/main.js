@@ -986,6 +986,14 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     const sargassumHeight = beachHeight * 0.25;
     const sargassumTop = beachBottom - sargassumHeight;
 
+    ctx.save();
+    const baseSand = ctx.createLinearGradient(0, sargassumTop, 0, sargassumTop + sargassumHeight);
+    baseSand.addColorStop(0, 'rgba(214, 196, 148, 0.84)');
+    baseSand.addColorStop(1, 'rgba(198, 174, 122, 0.82)');
+    ctx.fillStyle = baseSand;
+    ctx.fillRect(padding, sargassumTop, width - padding * 2, sargassumHeight);
+    ctx.restore();
+
     simulation.loadStates.forEach((state) => {
       const xStart = padding + (state.startPosM / simulation.beachLength) * widthAvailable;
       const xEnd = padding + (state.endPosM / simulation.beachLength) * widthAvailable;
