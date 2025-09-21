@@ -512,11 +512,11 @@ function createLayout() {
           <div class="sim-controls">
             <button type="button" id="toggleRun" class="toggle-run">Pause</button>
             <span id="timeLabel" class="sim-stat">Sim time 00:00:00</span>
+            <div class="speed-slider">
+              <input type="range" id="speedSlider" min="1" max="60" step="1" />
+              <span id="speedValue">1 s → 1 min</span>
+            </div>
           </div>
-          <div class="speed-slider">
-            <input type="range" id="speedSlider" min="1" max="60" step="1" />
-          </div>
-          <span id="speedValue" class="sim-stat">1 s → 1 min</span>
         </div>
         <div class="canvas-overlay canvas-overlay-bottom">
           <span id="detailsLabel"></span>
