@@ -19,8 +19,7 @@ const DEFAULT_PARAMS = {
 
 const DEFAULT_SETTINGS = {
   minutesPerSecond: DEFAULT_SIM_MINUTES_PER_SECOND,
-  atvOverrideEnabled: false,
-  atvOverrideCount: null,
+  atvOverrideCount: 0,
 };
 
 const INPUTS = [
@@ -485,20 +484,14 @@ function createLayout() {
           <h2>ATV Operations</h2>
           <div class="input-grid" data-section="atv"></div>
           <div class="field override-field">
-            <label for="atvOverrideToggle">Override # of ATVs</label>
-            <div class="override-controls">
-              <select id="atvOverrideToggle">
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-              <input
-                type="number"
-                id="atvOverrideInput"
-                min="1"
-                step="1"
-                placeholder="Manual count"
-              />
-            </div>
+            <label for="atvOverrideInput">Override # of ATVs</label>
+            <input
+              type="number"
+              id="atvOverrideInput"
+              min="0"
+              step="1"
+              placeholder="0 for auto"
+            />
             <span class="field-note" id="atvOverrideHint"></span>
           </div>
         </div>
@@ -549,7 +542,6 @@ function createLayout() {
     derivedToggle: document.querySelector('#toggleDerived'),
     speedSlider: document.querySelector('#speedSlider'),
     speedValue: document.querySelector('#speedValue'),
-    atvOverrideToggle: document.querySelector('#atvOverrideToggle'),
     atvOverrideInput: document.querySelector('#atvOverrideInput'),
     atvOverrideHint: document.querySelector('#atvOverrideHint'),
   };
@@ -662,63 +654,39 @@ function renderSpeedControl(settings, onChange) {
 }
 
 function renderAtvOverrideControl(settings, refresh, elements = {}) {
-  const toggle = elements.toggle ?? document.querySelector('#atvOverrideToggle');
   const input = elements.input ?? document.querySelector('#atvOverrideInput');
-  if (!toggle || !input) {
+  if (!input) {
     return;
   }
 
-  const syncInputDisabled = (enabled) => {
-    input.disabled = !enabled;
-    if (!enabled) {
-      settings.atvOverrideCount = null;
-      input.value = '';
+  const applyValue = (value) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric <= 0) {
+      settings.atvOverrideCount = 0;
+      input.value = '0';
+    } else {
+      settings.atvOverrideCount = Math.round(numeric);
+      input.value = String(settings.atvOverrideCount);
     }
+    refresh();
   };
 
-  toggle.value = settings.atvOverrideEnabled ? 'yes' : 'no';
+  input.value = settings.atvOverrideCount > 0
+    ? String(settings.atvOverrideCount)
+    : '0';
 
-  if (settings.atvOverrideCount != null) {
-    input.value = String(settings.atvOverrideCount);
-  }
-  syncInputDisabled(settings.atvOverrideEnabled);
-
-  toggle.addEventListener('change', () => {
-    const enabled = toggle.value === 'yes';
-    settings.atvOverrideEnabled = enabled;
-    if (enabled && !input.value) {
-      const computed = Number(toggle.dataset.computedAtvs);
-      if (Number.isFinite(computed) && computed > 0) {
-        settings.atvOverrideCount = Math.max(1, Math.round(computed));
-        input.value = String(settings.atvOverrideCount);
-      }
-    }
-    syncInputDisabled(enabled);
-    refresh();
+  input.addEventListener('change', () => {
+    applyValue(input.value);
   });
 
-  const commitInputValue = () => {
-    if (!settings.atvOverrideEnabled) {
-      return;
-    }
+  input.addEventListener('blur', () => {
+    applyValue(input.value);
+  });
 
-    const parsed = Number(input.value);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      settings.atvOverrideCount = null;
-      input.value = '';
-      refresh();
-      return;
-    }
-
-    settings.atvOverrideCount = Math.round(parsed);
-    input.value = String(settings.atvOverrideCount);
-    refresh();
-  };
-
-  input.addEventListener('blur', commitInputValue);
   input.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
-      commitInputValue();
+      event.preventDefault();
+      applyValue(input.value);
     }
   });
 }
@@ -1399,7 +1367,6 @@ function main() {
     detailsLabel,
     derivedSection,
     derivedToggle,
-    atvOverrideToggle,
     atvOverrideInput,
     atvOverrideHint,
   } = createLayout();
@@ -1408,7 +1375,7 @@ function main() {
 
   function refresh() {
     const derived = computeDerived(params);
-    const overrideAtvCount = settings.atvOverrideEnabled ? settings.atvOverrideCount : null;
+    const overrideAtvCount = settings.atvOverrideCount > 0 ? settings.atvOverrideCount : null;
     const simulation = buildSimulation(params, derived, { overrideAtvCount });
     const totals = {
       totalMinutes: simulation.totalMinutes,
@@ -1428,17 +1395,6 @@ function main() {
         atvOverrideHint.textContent = `Manual override active (${manualLabel} ATVs, computed ${computedLabel}).`;
       } else {
         atvOverrideHint.textContent = `Using computed requirement (${computedLabel} ATVs).`;
-      }
-    }
-
-    if (atvOverrideToggle) {
-      atvOverrideToggle.dataset.computedAtvs = String(derived.integerAtvs);
-    }
-
-    if (atvOverrideInput) {
-      const computedLabel = formatNumber(derived.integerAtvs, { maximumFractionDigits: 0 });
-      if (!settings.atvOverrideEnabled || settings.atvOverrideCount == null) {
-        atvOverrideInput.placeholder = `Computed ${computedLabel}`;
       }
     }
   }
@@ -1466,7 +1422,6 @@ function main() {
   }
 
   renderAtvOverrideControl(settings, refresh, {
-    toggle: atvOverrideToggle,
     input: atvOverrideInput,
   });
 

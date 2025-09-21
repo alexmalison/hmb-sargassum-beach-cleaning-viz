@@ -143,20 +143,6 @@
   gap: 0.45rem;
 }
 
-.override-controls {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.override-controls select {
-  min-width: 90px;
-}
-
-.override-controls input {
-  flex: 1;
-}
-
 .field-note {
   display: block;
   font-size: 0.7rem;
