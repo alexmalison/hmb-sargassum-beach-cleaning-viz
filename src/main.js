@@ -754,6 +754,7 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
   let paramsRef = { ...DEFAULT_PARAMS };
   let animationStart = null;
   let minutesPerSecond = DEFAULT_SIM_MINUTES_PER_SECOND;
+  let orientationByAtv = [];
 
   const beachTop = height * 0.3;
   const beachBottom = height * 0.7;
@@ -765,6 +766,7 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     };
     paramsRef = { ...params };
     animationStart = null;
+    orientationByAtv = new Array(simulation.numAtvs).fill(1);
   }
 
   function updateSpeed(value) {
@@ -845,33 +847,57 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     });
   }
 
-  function getAtvState(segments, simMinutes) {
+  function getAtvState(segments, simMinutes, prevDirection = 1) {
     if (!segments.length) {
-      return { position: 0, phase: 'idle', loadId: null };
+      return { position: 0, phase: 'idle', loadId: null, direction: prevDirection };
     }
 
     const totalDuration = segments[segments.length - 1].endMin;
     if (totalDuration === 0) {
-      return { position: 0, phase: 'idle', loadId: null };
+      return { position: 0, phase: 'idle', loadId: null, direction: prevDirection };
     }
 
     let t = simMinutes % totalDuration;
+    let direction = prevDirection;
 
     for (let i = 0; i < segments.length; i += 1) {
       const segment = segments[i];
       if (t < segment.startMin) {
-        return { position: segment.startPosM, phase: 'idle', loadId: segment.loadId };
+        return {
+          position: segment.startPosM,
+          phase: 'idle',
+          loadId: segment.loadId,
+          direction,
+        };
       }
       if (t <= segment.endMin || segment.endMin === segment.startMin) {
         const duration = segment.endMin - segment.startMin;
         const progress = duration > 0 ? (t - segment.startMin) / duration : 1;
         const position = segment.startPosM + (segment.endPosM - segment.startPosM) * progress;
-        return { position, phase: segment.phase, loadId: segment.loadId };
+        const segmentDirection = Math.sign(segment.endPosM - segment.startPosM);
+        if (segmentDirection !== 0) {
+          direction = segmentDirection;
+        }
+        return {
+          position,
+          phase: segment.phase,
+          loadId: segment.loadId,
+          direction,
+        };
       }
     }
 
     const finalSegment = segments[segments.length - 1];
-    return { position: finalSegment.endPosM, phase: 'idle', loadId: finalSegment.loadId };
+    const segmentDirection = Math.sign(finalSegment.endPosM - finalSegment.startPosM);
+    if (segmentDirection !== 0) {
+      direction = segmentDirection;
+    }
+    return {
+      position: finalSegment.endPosM,
+      phase: 'idle',
+      loadId: finalSegment.loadId,
+      direction,
+    };
   }
 
   function drawLoads() {
@@ -890,23 +916,39 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.setLineDash([]);
   }
 
-  function drawAtvWithTrailer(x, y, color) {
+  function drawAtvWithTrailer(x, y, color, direction = 1) {
     ctx.save();
 
     const wheelRadius = 5;
-    const bodyWidth = 36;
-    const bodyHeight = 14;
-    const trailerWidth = 28;
-    const trailerHeight = 12;
+    const bodyWidth = 28; // compact ATV body
+    const bodyHeight = 12;
+    const trailerWidth = 36; // larger trailer footprint
+    const trailerHeight = 14;
     const hitchLength = 8;
+
+    const forward = direction >= 0 ? 1 : -1;
 
     const bodyLeft = x - bodyWidth / 2;
     const bodyTop = y - wheelRadius - bodyHeight;
     const bodyRight = bodyLeft + bodyWidth;
 
-    const trailerLeft = bodyLeft - hitchLength - trailerWidth;
     const trailerTop = y - wheelRadius - trailerHeight + 2;
-    const trailerRight = trailerLeft + trailerWidth;
+    let trailerLeft;
+    let trailerRight;
+    let hitchStartX;
+    let hitchEndX;
+
+    if (forward >= 0) {
+      trailerRight = bodyLeft - hitchLength;
+      trailerLeft = trailerRight - trailerWidth;
+      hitchStartX = bodyLeft;
+      hitchEndX = trailerRight;
+    } else {
+      trailerLeft = bodyRight + hitchLength;
+      trailerRight = trailerLeft + trailerWidth;
+      hitchStartX = bodyRight;
+      hitchEndX = trailerLeft;
+    }
 
     ctx.fillStyle = color;
     ctx.fillRect(bodyLeft, bodyTop, bodyWidth, bodyHeight);
@@ -920,16 +962,16 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(bodyLeft, y - wheelRadius - 2);
-    ctx.lineTo(trailerRight, y - wheelRadius + 1);
+    ctx.moveTo(hitchStartX, y - wheelRadius - 2);
+    ctx.lineTo(hitchEndX, y - wheelRadius + 1);
     ctx.stroke();
 
     const hubColor = 'rgba(15, 32, 52, 0.85)';
 
     const wheels = [
-      { x: bodyLeft + 8, y },
-      { x: bodyRight - 8, y },
-      { x: trailerLeft + trailerWidth * 0.25, y: y + 1 },
+      { x: bodyLeft + bodyWidth * 0.25, y },
+      { x: bodyRight - bodyWidth * 0.25, y },
+      { x: trailerLeft + trailerWidth * 0.2, y: y + 1 },
       { x: trailerRight - trailerWidth * 0.2, y: y + 1 },
     ];
 
@@ -946,13 +988,22 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     });
 
     ctx.fillStyle = 'rgba(15, 32, 52, 0.85)';
-    ctx.fillRect(bodyRight - 10, bodyTop - 6, 12, 6);
+    const seatWidth = 12;
+    const seatX = forward >= 0 ? bodyRight - seatWidth + 2 : bodyLeft - 2;
+    ctx.fillRect(seatX, bodyTop - 6, seatWidth, 6);
 
     ctx.beginPath();
-    ctx.moveTo(bodyLeft + bodyWidth * 0.4, bodyTop);
-    ctx.lineTo(bodyLeft + bodyWidth * 0.7, bodyTop - 8);
-    ctx.lineTo(bodyLeft + bodyWidth * 0.85, bodyTop - 8);
-    ctx.lineTo(bodyLeft + bodyWidth * 0.7, bodyTop);
+    if (forward >= 0) {
+      ctx.moveTo(bodyRight - bodyWidth * 0.7, bodyTop);
+      ctx.lineTo(bodyRight - bodyWidth * 0.4, bodyTop - 8);
+      ctx.lineTo(bodyRight - bodyWidth * 0.15, bodyTop - 8);
+      ctx.lineTo(bodyRight - bodyWidth * 0.3, bodyTop);
+    } else {
+      ctx.moveTo(bodyLeft + bodyWidth * 0.7, bodyTop);
+      ctx.lineTo(bodyLeft + bodyWidth * 0.4, bodyTop - 8);
+      ctx.lineTo(bodyLeft + bodyWidth * 0.15, bodyTop - 8);
+      ctx.lineTo(bodyLeft + bodyWidth * 0.3, bodyTop);
+    }
     ctx.closePath();
     ctx.fill();
 
@@ -963,12 +1014,14 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     const details = [];
 
     simulation.segmentsByAtv.forEach((segments, index) => {
-      const { position, phase, loadId } = getAtvState(segments, simMinutes);
+      const prevDirection = orientationByAtv[index] ?? 1;
+      const { position, phase, loadId, direction } = getAtvState(segments, simMinutes, prevDirection);
+      orientationByAtv[index] = direction || prevDirection || 1;
       const color = ATV_COLORS[index % ATV_COLORS.length];
       const x = padding + (position / simulation.beachLength) * (width - padding * 2);
       const y = beachBottom - 30 - (index * 18);
 
-      drawAtvWithTrailer(x, y, color);
+      drawAtvWithTrailer(x, y, color, orientationByAtv[index]);
 
       ctx.fillStyle = color;
       ctx.font = '12px "Inter", sans-serif';
