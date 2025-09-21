@@ -42,35 +42,20 @@
   flex-wrap: wrap;
 }
 
-.speed-control {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: 0.8rem;
-  padding: 0.8rem 0 0.2rem;
-}
-
-.speed-control label {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: rgba(244, 246, 248, 0.75);
-}
-
 .speed-slider {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .speed-slider input[type='range'] {
-  width: min(240px, 60vw);
+  width: min(220px, 50vw);
 }
 
 .speed-slider span {
   font-size: 0.8rem;
-  color: rgba(244, 246, 248, 0.8);
-  min-width: 96px;
+  color: rgba(244, 246, 248, 0.9);
+  min-width: 88px;
   text-align: center;
 }
 
@@ -281,19 +266,28 @@ canvas {
   box-shadow: 0 25px 45px rgba(0, 0, 0, 0.35);
 }
 
-.overlay {
+.canvas-overlay {
   position: absolute;
-  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 0.8rem;
+  align-items: center;
+  gap: 0.7rem;
   padding: 0.45rem 0.8rem;
   border-radius: 999px;
-  background: rgba(11, 23, 38, 0.75);
+  background: rgba(11, 23, 38, 0.78);
   border: 1px solid rgba(244, 246, 248, 0.18);
-  font-size: 0.85rem;
   backdrop-filter: blur(10px);
+  font-size: 0.85rem;
+}
+
+.canvas-overlay-top {
+  top: 20px;
+}
+
+.canvas-overlay-bottom {
+  bottom: 24px;
+  gap: 0.8rem;
 }
 
 .status {
@@ -309,6 +303,21 @@ canvas {
   align-items: center;
   padding: 1rem 1.5rem 1.8rem;
   gap: 0.5rem;
+}
+
+.sim-time {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 170px;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(244, 246, 248, 0.12);
+  border: 1px solid rgba(244, 246, 248, 0.2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(244, 246, 248, 0.9);
+  font-size: 0.8rem;
 }
 
 @media (max-width: 1080px) {

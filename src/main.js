@@ -496,16 +496,15 @@ function createLayout() {
     <section class="simulation">
       <div class="canvas-container">
         <canvas id="beachCanvas" width="960" height="520"></canvas>
-        <div class="overlay">
-          <span id="timeLabel">00:00</span>
-          <span id="detailsLabel"></span>
+        <div class="canvas-overlay canvas-overlay-top">
+          <span id="timeLabel" class="sim-time">Sim time 00:00</span>
+          <div class="speed-slider">
+            <input type="range" id="speedSlider" min="1" max="60" step="1" />
+            <span id="speedValue"></span>
+          </div>
         </div>
-      </div>
-      <div class="speed-control">
-        <label for="speedSlider">Simulation speed (1 s real = ? min sim)</label>
-        <div class="speed-slider">
-          <input type="range" id="speedSlider" min="1" max="60" step="1" />
-          <span id="speedValue"></span>
+        <div class="canvas-overlay canvas-overlay-bottom">
+          <span id="detailsLabel"></span>
         </div>
       </div>
     </section>
@@ -777,39 +776,9 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     const minutes = Math.floor(simMinutes % 60);
     const seconds = Math.floor((simMinutes % 1) * 60);
     const timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    const label = `Sim time ${timeString}`;
-
     if (timeLabel) {
-      timeLabel.textContent = label;
+      timeLabel.textContent = `Sim time ${timeString}`;
     }
-
-    ctx.save();
-    ctx.font = '18px "Inter", sans-serif';
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-
-    const metrics = ctx.measureText(label);
-    const textWidth = metrics.width;
-    const textHeight = (metrics.actualBoundingBoxAscent ?? 0) + (metrics.actualBoundingBoxDescent ?? 0);
-    const boxPaddingX = 12;
-    const boxPaddingY = 6;
-    const boxWidth = textWidth + boxPaddingX * 2;
-    const boxHeight = (textHeight || 16) + boxPaddingY * 2;
-
-    const boxX = padding;
-    const boxY = Math.max(16, (beachTop - boxHeight) - 12);
-
-    ctx.fillStyle = 'rgba(11, 23, 38, 0.78)';
-    ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-
-    ctx.strokeStyle = 'rgba(244, 246, 248, 0.18)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-
-    ctx.fillStyle = 'rgba(244, 246, 248, 0.92)';
-    ctx.fillText(label, boxX + boxPaddingX, boxY + boxPaddingY);
-
-    ctx.restore();
   }
 
   function drawBackground() {
