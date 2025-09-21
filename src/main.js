@@ -948,11 +948,11 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.fillStyle = '#0f2034';
     ctx.fillRect(0, 0, width, beachTop);
 
-    const sandGrad = ctx.createLinearGradient(0, beachTop, 0, beachBottom);
-    sandGrad.addColorStop(0, 'rgba(214, 196, 148, 0.78)');
-    sandGrad.addColorStop(1, 'rgba(191, 166, 115, 0.82)');
-    ctx.fillStyle = sandGrad;
-    ctx.fillRect(padding, beachTop, width - padding * 2, beachBottom - beachTop);
+    const waterGrad = ctx.createLinearGradient(0, beachBottom, 0, height);
+    waterGrad.addColorStop(0, 'rgba(118, 213, 237, 0.85)');
+    waterGrad.addColorStop(1, 'rgba(64, 191, 255, 0.9)');
+    ctx.fillStyle = waterGrad;
+    ctx.fillRect(0, beachBottom, width, height - beachBottom);
 
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.lineWidth = 2;
