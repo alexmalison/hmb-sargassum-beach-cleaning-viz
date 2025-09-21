@@ -1244,6 +1244,42 @@ function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel)
     ctx.closePath();
     ctx.fill();
 
+    // driver avatar
+    const driverCenterX = forward >= 0
+      ? bodyRight - bodyWidth * 0.35
+      : bodyLeft + bodyWidth * 0.35;
+    const driverHeadRadius = 4;
+    const driverHeadY = bodyTop - driverHeadRadius - 2;
+    const driverTorsoHeight = 8;
+    const driverTorsoWidth = 6;
+
+    ctx.fillStyle = '#ffd180';
+    ctx.beginPath();
+    ctx.arc(driverCenterX, driverHeadY, driverHeadRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#0f2034';
+    ctx.fillRect(
+      driverCenterX - driverTorsoWidth / 2,
+      driverHeadY + driverHeadRadius - 1,
+      driverTorsoWidth,
+      driverTorsoHeight,
+    );
+
+    const handleY = bodyTop + 2;
+    const handleLength = 10;
+    ctx.strokeStyle = '#cfd8dc';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    if (forward >= 0) {
+      ctx.moveTo(driverCenterX - 2, handleY);
+      ctx.lineTo(driverCenterX - 2 - handleLength, handleY - 2);
+    } else {
+      ctx.moveTo(driverCenterX + 2, handleY);
+      ctx.lineTo(driverCenterX + 2 + handleLength, handleY - 2);
+    }
+    ctx.stroke();
+
     ctx.restore();
   }
 
