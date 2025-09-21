@@ -517,8 +517,11 @@ function createLayout() {
         <canvas id="beachCanvas" width="960" height="520"></canvas>
         <div class="canvas-overlay canvas-overlay-top">
           <div class="sim-controls">
-            <span id="timeLabel" class="sim-time">Sim time 00:00</span>
-            <button type="button" id="toggleRun" class="toggle-run">Pause</button>
+            <div class="sim-primary">
+              <span id="timeLabel" class="sim-time">Sim time 00:00</span>
+              <button type="button" id="toggleRun" class="toggle-run">Pause</button>
+            </div>
+            <span id="idleLabel" class="sim-idle">Crew idle time 00:00:00</span>
           </div>
           <div class="speed-slider">
             <input type="range" id="speedSlider" min="1" max="60" step="1" />
@@ -537,6 +540,7 @@ function createLayout() {
     derivedList: document.querySelector('#derivedMetrics'),
     status: document.querySelector('#status'),
     timeLabel: document.querySelector('#timeLabel'),
+    idleLabel: document.querySelector('#idleLabel'),
     toggleButton: document.querySelector('#toggleRun'),
     detailsLabel: document.querySelector('#detailsLabel'),
     derivedSection: document.querySelector('#derivedSection'),
@@ -782,6 +786,7 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
   let simElapsedMinutes = 0;
   let lastFrameTimestamp = null;
   let frameHandle = null;
+  let loadingTimeline = [];
   const stateListeners = new Set();
 
   const beachTop = height * 0.3;
@@ -821,6 +826,7 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     simElapsedMinutes = 0;
     lastFrameTimestamp = null;
     autoPaused = false;
+    loadingTimeline = buildLoadingTimeline(simulation.loadStates ?? []);
     notifyStateChange();
     ensureLoopRunning();
   }
@@ -868,14 +874,74 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     };
   }
 
-  function drawTimestamp(simMinutes) {
-    const hours = Math.floor(simMinutes / 60);
-    const minutes = Math.floor(simMinutes % 60);
-    const seconds = Math.floor((simMinutes % 1) * 60);
-    const timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    if (timeLabel) {
-      timeLabel.textContent = `Sim time ${timeString}`;
+  function buildLoadingTimeline(loadStates) {
+    const intervals = loadStates
+      .map((state) => {
+        const start = Math.min(state.arrivalMin, state.cleanedAtMinute);
+        const end = Math.max(state.arrivalMin, state.cleanedAtMinute);
+        return end > start ? { start, end } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.start - b.start);
+
+    if (!intervals.length) {
+      return [];
     }
+
+    const merged = [intervals[0]];
+    for (let i = 1; i < intervals.length; i += 1) {
+      const current = intervals[i];
+      const last = merged[merged.length - 1];
+      if (current.start <= last.end) {
+        last.end = Math.max(last.end, current.end);
+      } else {
+        merged.push({ ...current });
+      }
+    }
+
+    return merged;
+  }
+
+  function getBusyMinutesUpTo(minutes) {
+    if (!loadingTimeline.length || minutes <= loadingTimeline[0].start) {
+      return 0;
+    }
+    let busy = 0;
+    for (let i = 0; i < loadingTimeline.length; i += 1) {
+      const { start, end } = loadingTimeline[i];
+      if (minutes <= start) {
+        break;
+      }
+      const effectiveEnd = Math.min(end, minutes);
+      busy += Math.max(0, effectiveEnd - start);
+      if (minutes <= end) {
+        break;
+      }
+    }
+    return Math.min(busy, Math.max(0, minutes));
+  }
+
+  function formatClock(minutes) {
+    const totalSeconds = Math.max(0, Math.floor(minutes * 60));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutesPart = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutesPart).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  function drawTimestamp(simMinutes) {
+    if (timeLabel) {
+      timeLabel.textContent = `Sim time ${formatClock(simMinutes)}`;
+    }
+  }
+
+  function drawIdle(simMinutes) {
+    if (!idleLabel) {
+      return;
+    }
+    const busyMinutes = getBusyMinutesUpTo(simMinutes);
+    const idleMinutes = Math.max(0, simMinutes - busyMinutes);
+    idleLabel.textContent = `Crew idle time ${formatClock(idleMinutes)}`;
   }
 
   function drawBackground() {
@@ -1205,9 +1271,10 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
 
     drawBackground();
     drawSargassum(simMinutes);
-    drawLoads();
+   drawLoads();
     drawAtvs(simMinutes);
     drawTimestamp(simMinutes);
+    drawIdle(simMinutes);
 
     if (simElapsedMinutes >= totalMinutes) {
       autoPaused = true;
@@ -1250,6 +1317,7 @@ function main() {
     derivedList,
     status,
     timeLabel,
+    idleLabel,
     toggleButton,
     detailsLabel,
     derivedSection,
@@ -1258,7 +1326,7 @@ function main() {
     atvOverrideInput,
     atvOverrideHint,
   } = createLayout();
-  const animator = createAnimator(canvas, timeLabel, detailsLabel);
+  const animator = createAnimator(canvas, timeLabel, idleLabel, detailsLabel);
   let derivedCollapsed = false;
 
   function refresh() {
