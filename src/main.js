@@ -517,8 +517,8 @@ function createLayout() {
           </div>
           <div class="speed-slider">
             <input type="range" id="speedSlider" min="1" max="60" step="1" />
-            <span id="speedValue"></span>
           </div>
+          <span id="speedValue" class="sim-stat">1 s → 1 min</span>
         </div>
         <div class="canvas-overlay canvas-overlay-bottom">
           <span id="detailsLabel"></span>

@@ -44,19 +44,13 @@
 
 .speed-slider {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.35rem;
 }
 
 .speed-slider input[type='range'] {
-  width: min(220px, 50vw);
-}
-
-.speed-slider span {
-  font-size: 0.8rem;
-  color: rgba(244, 246, 248, 0.9);
-  min-width: 88px;
-  text-align: center;
+  width: min(240px, 60vw);
 }
 
 .control-group {
