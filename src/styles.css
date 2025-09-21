@@ -270,8 +270,8 @@ canvas {
 }
 
 .canvas-overlay-bottom {
-  bottom: 18px;
-  gap: 0.6rem;
+  bottom: 12px;
+  gap: 0.45rem;
 }
 
 .status {
