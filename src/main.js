@@ -958,6 +958,12 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.fillStyle = waterGrad;
     ctx.fillRect(0, beachBottom, width, height - beachBottom);
 
+    const midSandGrad = ctx.createLinearGradient(0, beachTop, 0, beachBottom);
+    midSandGrad.addColorStop(0, 'rgba(214, 196, 148, 0.82)');
+    midSandGrad.addColorStop(1, 'rgba(198, 174, 122, 0.78)');
+    ctx.fillStyle = midSandGrad;
+    ctx.fillRect(0, beachTop, width, beachBottom - beachTop);
+
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.lineWidth = 2;
     ctx.beginPath();
