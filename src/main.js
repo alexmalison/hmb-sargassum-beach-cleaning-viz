@@ -516,7 +516,10 @@ function createLayout() {
       <div class="canvas-container">
         <canvas id="beachCanvas" width="960" height="520"></canvas>
         <div class="canvas-overlay canvas-overlay-top">
-          <span id="timeLabel" class="sim-time">Sim time 00:00</span>
+          <div class="sim-controls">
+            <span id="timeLabel" class="sim-time">Sim time 00:00</span>
+            <button type="button" id="toggleRun" class="toggle-run">Pause</button>
+          </div>
           <div class="speed-slider">
             <input type="range" id="speedSlider" min="1" max="60" step="1" />
             <span id="speedValue"></span>
@@ -534,6 +537,7 @@ function createLayout() {
     derivedList: document.querySelector('#derivedMetrics'),
     status: document.querySelector('#status'),
     timeLabel: document.querySelector('#timeLabel'),
+    toggleButton: document.querySelector('#toggleRun'),
     detailsLabel: document.querySelector('#detailsLabel'),
     derivedSection: document.querySelector('#derivedSection'),
     derivedToggle: document.querySelector('#toggleDerived'),
@@ -771,12 +775,41 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
   };
 
   let paramsRef = { ...DEFAULT_PARAMS };
-  let animationStart = null;
   let minutesPerSecond = DEFAULT_SIM_MINUTES_PER_SECOND;
   let orientationByAtv = [];
+  let manuallyPaused = false;
+  let autoPaused = false;
+  let simElapsedMinutes = 0;
+  let lastFrameTimestamp = null;
+  let frameHandle = null;
+  const stateListeners = new Set();
 
   const beachTop = height * 0.3;
   const beachBottom = height * 0.7;
+
+  function notifyStateChange() {
+    const snapshot = { paused: isPaused(), manuallyPaused, autoPaused };
+    stateListeners.forEach((listener) => {
+      try {
+        listener(snapshot);
+      } catch (error) {
+        // ignore listener errors
+      }
+    });
+  }
+
+  function cancelLoop() {
+    if (frameHandle !== null) {
+      cancelAnimationFrame(frameHandle);
+      frameHandle = null;
+    }
+  }
+
+  function ensureLoopRunning() {
+    if (frameHandle === null && !isPaused()) {
+      frameHandle = requestAnimationFrame(loop);
+    }
+  }
 
   function updateSimulation(newSimulation, params) {
     simulation = {
@@ -784,12 +817,55 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
       beachLength: params.beachLengthM,
     };
     paramsRef = { ...params };
-    animationStart = null;
     orientationByAtv = new Array(simulation.numAtvs).fill(1);
+    simElapsedMinutes = 0;
+    lastFrameTimestamp = null;
+    autoPaused = false;
+    notifyStateChange();
+    ensureLoopRunning();
   }
 
   function updateSpeed(value) {
     minutesPerSecond = value;
+    lastFrameTimestamp = null;
+  }
+
+  function toggleManualPause(force) {
+    const previous = manuallyPaused;
+    if (typeof force === 'boolean') {
+      manuallyPaused = force;
+    } else {
+      manuallyPaused = !manuallyPaused;
+    }
+
+    if (!manuallyPaused) {
+      if (autoPaused) {
+        autoPaused = false;
+        simElapsedMinutes = 0;
+      }
+      lastFrameTimestamp = null;
+      ensureLoopRunning();
+    } else if (!previous) {
+      cancelLoop();
+    }
+
+    notifyStateChange();
+    return manuallyPaused;
+  }
+
+  function isPaused() {
+    return manuallyPaused || autoPaused;
+  }
+
+  function onStateChange(listener) {
+    if (typeof listener !== 'function') {
+      return () => {};
+    }
+    stateListeners.add(listener);
+    listener({ paused: isPaused(), manuallyPaused, autoPaused });
+    return () => {
+      stateListeners.delete(listener);
+    };
   }
 
   function drawTimestamp(simMinutes) {
@@ -1107,13 +1183,25 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
   }
 
   function loop(timestamp) {
-    if (!animationStart) {
-      animationStart = timestamp;
+    if (isPaused()) {
+      frameHandle = null;
+      return;
     }
 
-    const elapsedSeconds = (timestamp - animationStart) / 1000;
+    if (lastFrameTimestamp === null) {
+      lastFrameTimestamp = timestamp;
+    }
+
+    const deltaSeconds = Math.max((timestamp - lastFrameTimestamp) / 1000, 0);
+    lastFrameTimestamp = timestamp;
+
     const totalMinutes = Math.max(simulation.totalMinutes, 1);
-    const simMinutes = (elapsedSeconds * minutesPerSecond) % totalMinutes;
+    simElapsedMinutes += deltaSeconds * minutesPerSecond;
+    if (simElapsedMinutes > totalMinutes) {
+      simElapsedMinutes = totalMinutes;
+    }
+
+    const simMinutes = simElapsedMinutes;
 
     drawBackground();
     drawSargassum(simMinutes);
@@ -1121,14 +1209,24 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     drawAtvs(simMinutes);
     drawTimestamp(simMinutes);
 
-    requestAnimationFrame(loop);
+    if (simElapsedMinutes >= totalMinutes) {
+      autoPaused = true;
+      frameHandle = null;
+      notifyStateChange();
+      return;
+    }
+
+    frameHandle = requestAnimationFrame(loop);
   }
 
-  requestAnimationFrame(loop);
+  ensureLoopRunning();
 
   return {
     update: updateSimulation,
     updateSpeed,
+    toggleManualPause,
+    isPaused,
+    onStateChange,
   };
 }
 
@@ -1152,6 +1250,7 @@ function main() {
     derivedList,
     status,
     timeLabel,
+    toggleButton,
     detailsLabel,
     derivedSection,
     derivedToggle,
@@ -1207,6 +1306,19 @@ function main() {
   renderSpeedControl(settings, (value) => {
     animator.updateSpeed(value);
   });
+
+  if (toggleButton) {
+    const updateButtonLabel = ({ paused }) => {
+      toggleButton.textContent = paused ? 'Run' : 'Pause';
+    };
+
+    animator.onStateChange(updateButtonLabel);
+
+    toggleButton.addEventListener('click', () => {
+      const resume = animator.isPaused();
+      animator.toggleManualPause(!resume);
+    });
+  }
 
   renderAtvOverrideControl(settings, refresh, {
     toggle: atvOverrideToggle,
