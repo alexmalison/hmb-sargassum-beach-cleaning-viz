@@ -521,6 +521,7 @@ function createLayout() {
               <span id="timeLabel" class="sim-time">Sim time 00:00</span>
               <button type="button" id="toggleRun" class="toggle-run">Pause</button>
             </div>
+            <span id="loadedLabel" class="sim-loaded">Loaded 0.0 m³</span>
             <span id="idleLabel" class="sim-idle">Crew idle time 00:00:00</span>
           </div>
           <div class="speed-slider">
@@ -540,6 +541,7 @@ function createLayout() {
     derivedList: document.querySelector('#derivedMetrics'),
     status: document.querySelector('#status'),
     timeLabel: document.querySelector('#timeLabel'),
+    loadedLabel: document.querySelector('#loadedLabel'),
     idleLabel: document.querySelector('#idleLabel'),
     toggleButton: document.querySelector('#toggleRun'),
     detailsLabel: document.querySelector('#detailsLabel'),
@@ -762,7 +764,7 @@ function renderDerived(listEl, derived, totals) {
   });
 }
 
-function createAnimator(canvas, timeLabel, detailsLabel) {
+function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel) {
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
   const height = canvas.height;
@@ -827,6 +829,9 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     lastFrameTimestamp = null;
     autoPaused = false;
     loadingTimeline = buildLoadingTimeline(simulation.loadStates ?? []);
+    drawTimestamp(simElapsedMinutes);
+    drawLoaded(simElapsedMinutes);
+    drawIdle(simElapsedMinutes);
     notifyStateChange();
     ensureLoopRunning();
   }
@@ -933,6 +938,40 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     if (timeLabel) {
       timeLabel.textContent = `Sim time ${formatClock(simMinutes)}`;
     }
+  }
+
+  function drawLoaded(simMinutes) {
+    if (!loadedLabel) {
+      return;
+    }
+
+    const capacity = Number(paramsRef.trailerCapacityM3) || 0;
+    if (capacity <= 0 || !Array.isArray(simulation.loadStates)) {
+      loadedLabel.textContent = 'Loaded 0.0 m³';
+      return;
+    }
+
+    let total = 0;
+    simulation.loadStates.forEach((state) => {
+      const start = state.arrivalMin;
+      const end = state.cleanedAtMinute;
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
+        return;
+      }
+
+      if (simMinutes >= end) {
+        total += capacity;
+      } else if (simMinutes > start) {
+        const fraction = Math.max(0, Math.min((simMinutes - start) / (end - start), 1));
+        total += capacity * fraction;
+      }
+    });
+
+    const volumeLabel = formatNumber(total, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    });
+    loadedLabel.textContent = `Loaded ${volumeLabel} m³`;
   }
 
   function drawIdle(simMinutes) {
@@ -1271,9 +1310,10 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
 
     drawBackground();
     drawSargassum(simMinutes);
-   drawLoads();
+    drawLoads();
     drawAtvs(simMinutes);
     drawTimestamp(simMinutes);
+    drawLoaded(simMinutes);
     drawIdle(simMinutes);
 
     if (simElapsedMinutes >= totalMinutes) {
@@ -1317,6 +1357,7 @@ function main() {
     derivedList,
     status,
     timeLabel,
+    loadedLabel,
     idleLabel,
     toggleButton,
     detailsLabel,
@@ -1326,7 +1367,7 @@ function main() {
     atvOverrideInput,
     atvOverrideHint,
   } = createLayout();
-  const animator = createAnimator(canvas, timeLabel, idleLabel, detailsLabel);
+  const animator = createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel);
   let derivedCollapsed = false;
 
   function refresh() {

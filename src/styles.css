@@ -338,6 +338,13 @@ canvas {
   gap: 0.6rem;
 }
 
+.sim-loaded {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: rgba(244, 246, 248, 0.85);
+  text-transform: uppercase;
+}
+
 .toggle-run {
   padding: 0.35rem 0.9rem;
   border-radius: 999px;
