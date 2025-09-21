@@ -952,6 +952,12 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.fillStyle = grad;
     ctx.fillRect(padding, beachTop, width - padding * 2, beachBottom - beachTop);
 
+    const oceanGrad = ctx.createLinearGradient(0, beachBottom, 0, height);
+    oceanGrad.addColorStop(0, 'rgba(12, 97, 141, 0.85)');
+    oceanGrad.addColorStop(1, 'rgba(9, 128, 164, 0.9)');
+    ctx.fillStyle = oceanGrad;
+    ctx.fillRect(padding, beachBottom, width - padding * 2, height - beachBottom);
+
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -986,7 +992,19 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
       const arrival = state.arrivalMin;
       const cleaned = state.cleanedAtMinute;
 
-      if (cleaned <= 0 || simMinutes >= cleaned) {
+      if (cleaned <= 0) {
+        return;
+      }
+
+      const fullBeachGrad = ctx.createLinearGradient(xStart, sargassumTop, xEnd, beachBottom);
+      fullBeachGrad.addColorStop(0, 'rgba(194, 178, 128, 0.65)');
+      fullBeachGrad.addColorStop(1, 'rgba(214, 198, 148, 0.7)');
+      ctx.save();
+      ctx.fillStyle = fullBeachGrad;
+      ctx.fillRect(xStart, sargassumTop, xEnd - xStart, sargassumHeight);
+      ctx.restore();
+
+      if (simMinutes >= cleaned) {
         return;
       }
 
@@ -995,6 +1013,10 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
         const duration = Math.max(cleaned - arrival, 0.01);
         const progress = Math.min(Math.max((simMinutes - arrival) / duration, 0), 1);
         alpha = Math.max(0, 1 - progress);
+      }
+
+      if (alpha <= 0) {
+        return;
       }
 
       ctx.save();
