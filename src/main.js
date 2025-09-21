@@ -756,7 +756,8 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
   let lastIdleLabel = 'Crew idle time 00:00:00';
 
   const beachTop = height * 0.3;
-  const beachBottom = height * 0.7;
+  const coastalHeight = height * 0.4;
+  const beachBottom = beachTop + coastalHeight;
 
   function notifyStateChange() {
     const snapshot = { paused: isPaused(), manuallyPaused, autoPaused };
@@ -944,19 +945,20 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.fillStyle = '#0f2034';
     ctx.fillRect(0, 0, width, height);
 
-    const grad = ctx.createLinearGradient(0, beachTop, 0, beachBottom);
-    grad.addColorStop(0, 'rgba(230, 254, 255, 0.08)');
-    grad.addColorStop(0.5, 'rgba(110, 192, 230, 0.18)');
-    grad.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
+    const oceanHeight = height - beachBottom;
+    if (oceanHeight > 0) {
+      const oceanGrad = ctx.createLinearGradient(0, beachBottom - oceanHeight, 0, beachBottom);
+      oceanGrad.addColorStop(0, 'rgba(12, 97, 141, 0.85)');
+      oceanGrad.addColorStop(1, 'rgba(9, 128, 164, 0.9)');
+      ctx.fillStyle = oceanGrad;
+      ctx.fillRect(padding, beachBottom - oceanHeight, width - padding * 2, oceanHeight);
+    }
 
-    ctx.fillStyle = grad;
+    const sandGrad = ctx.createLinearGradient(0, beachTop, 0, beachBottom);
+    sandGrad.addColorStop(0, 'rgba(194, 178, 128, 0.65)');
+    sandGrad.addColorStop(1, 'rgba(214, 198, 148, 0.7)');
+    ctx.fillStyle = sandGrad;
     ctx.fillRect(padding, beachTop, width - padding * 2, beachBottom - beachTop);
-
-    const oceanGrad = ctx.createLinearGradient(0, beachBottom, 0, height);
-    oceanGrad.addColorStop(0, 'rgba(12, 97, 141, 0.85)');
-    oceanGrad.addColorStop(1, 'rgba(9, 128, 164, 0.9)');
-    ctx.fillStyle = oceanGrad;
-    ctx.fillRect(padding, beachBottom, width - padding * 2, height - beachBottom);
 
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.lineWidth = 2;
