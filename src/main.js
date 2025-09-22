@@ -11,6 +11,10 @@ const DEFAULT_PARAMS = {
   workHoursPerDay: 5,
   trailerCapacityM3: 2.0,
   timePerWorkerLoadM3Minutes: 25,
+  disposalTruckCount: 1,
+  disposalTruckCapacityM3: 8.0,
+  disposalDistanceM: 2000,
+  disposalTruckSpeedKmh: 20,
   atvSpeedKmh: 3,
   beachLengthM: 600,
   loadTransferTimeMinutes: 11,
@@ -94,6 +98,38 @@ const INPUTS = [
     max: 60,
     step: 1,
     section: 'atv',
+  },
+  {
+    key: 'disposalTruckCount',
+    label: 'Disposal Trucks (number of)',
+    min: 0,
+    max: 20,
+    step: 1,
+    section: 'labor',
+  },
+  {
+    key: 'disposalTruckCapacityM3',
+    label: 'Truck Capacity (m³, one decimal place)',
+    min: 0,
+    max: 30,
+    step: 0.1,
+    section: 'labor',
+  },
+  {
+    key: 'disposalDistanceM',
+    label: 'Distance to Disposal site (meters)',
+    min: 0,
+    max: 20000,
+    step: 50,
+    section: 'labor',
+  },
+  {
+    key: 'disposalTruckSpeedKmh',
+    label: 'Average Truck speed (km/h)',
+    min: 0,
+    max: 80,
+    step: 1,
+    section: 'labor',
   },
   {
     key: 'loadingMode',
@@ -506,27 +542,32 @@ function createLayout() {
       <div class="status" id="status"></div>
     </section>
     <section class="simulation">
-      <div class="canvas-container">
-        <canvas id="beachCanvas" width="720" height="336"></canvas>
-        <div class="canvas-overlay canvas-overlay-top">
-          <div class="sim-controls">
-            <button type="button" id="toggleRun" class="toggle-run">Pause</button>
-            <div class="sim-timing">
-              <span id="timeLabel" class="sim-stat">Sim time 00:00:00</span>
-              <div class="speed-slider">
-                <input type="range" id="speedSlider" min="1" max="60" step="1" />
-                <span id="speedValue">1 s → 1 min</span>
+      <div class="simulation-body">
+        <div class="fleet-canvas-container">
+          <canvas id="fleetCanvas" width="220" height="200"></canvas>
+        </div>
+        <div class="canvas-container">
+          <canvas id="beachCanvas" width="720" height="336"></canvas>
+          <div class="canvas-overlay canvas-overlay-top">
+            <div class="sim-controls">
+              <button type="button" id="toggleRun" class="toggle-run">Pause</button>
+              <div class="sim-timing">
+                <span id="timeLabel" class="sim-stat">Sim time 00:00:00</span>
+                <div class="speed-slider">
+                  <input type="range" id="speedSlider" min="1" max="60" step="1" />
+                  <span id="speedValue">1 s → 1 min</span>
+                </div>
               </div>
             </div>
+            <div class="sim-secondary">
+              <span id="loadedLabel" class="sim-stat">Loaded 0.0 m³</span>
+              <span class="sim-sep">•</span>
+              <span id="idleLabel" class="sim-stat">Crew idle time 00:00:00</span>
+            </div>
           </div>
-          <div class="sim-secondary">
-            <span id="loadedLabel" class="sim-stat">Loaded 0.0 m³</span>
-            <span class="sim-sep">•</span>
-            <span id="idleLabel" class="sim-stat">Crew idle time 00:00:00</span>
+          <div class="canvas-overlay canvas-overlay-bottom">
+            <span id="detailsLabel"></span>
           </div>
-        </div>
-        <div class="canvas-overlay canvas-overlay-bottom">
-          <span id="detailsLabel"></span>
         </div>
       </div>
     </section>
@@ -534,14 +575,13 @@ function createLayout() {
 
   return {
     canvas: document.querySelector('#beachCanvas'),
+    fleetCanvas: document.querySelector('#fleetCanvas'),
     derivedList: document.querySelector('#derivedMetrics'),
     status: document.querySelector('#status'),
     timeLabel: document.querySelector('#timeLabel'),
     loadedLabel: document.querySelector('#loadedLabel'),
     idleLabel: document.querySelector('#idleLabel'),
     toggleButton: document.querySelector('#toggleRun'),
-    loadedLabel: document.querySelector('#loadedLabel'),
-    idleLabel: document.querySelector('#idleLabel'),
     detailsLabel: document.querySelector('#detailsLabel'),
     derivedSection: document.querySelector('#derivedSection'),
     derivedToggle: document.querySelector('#toggleDerived'),
@@ -1419,6 +1459,85 @@ function updateStatus(element, params, derived) {
     return;
   }
   element.textContent = '';
+}
+
+function drawFleetCanvas(canvas) {
+  if (!canvas) {
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
+  const { width, height } = canvas;
+  ctx.clearRect(0, 0, width, height);
+
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+  skyGrad.addColorStop(0, 'rgba(15, 32, 52, 0.92)');
+  skyGrad.addColorStop(0.6, 'rgba(27, 50, 78, 0.95)');
+  skyGrad.addColorStop(1, 'rgba(18, 42, 65, 0.97)');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, width, height);
+
+  const groundY = height - 36;
+  const groundGrad = ctx.createLinearGradient(0, groundY, 0, height);
+  groundGrad.addColorStop(0, 'rgba(71, 55, 34, 0.9)');
+  groundGrad.addColorStop(1, 'rgba(51, 41, 25, 0.96)');
+  ctx.fillStyle = groundGrad;
+  ctx.fillRect(0, groundY, width, height - groundY);
+
+  const drawWheel = (cx, cy, radius) => {
+    ctx.fillStyle = '#1a1f2a';
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+  };
+
+  const drawTrailer = (x, baseY, color) => {
+    const bodyWidth = 80;
+    const bodyHeight = 30;
+    const hitchLength = 12;
+
+    ctx.fillStyle = color;
+    ctx.fillRect(x, baseY - bodyHeight, bodyWidth, bodyHeight);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.fillRect(x + 6, baseY - bodyHeight + 6, bodyWidth - 12, bodyHeight * 0.45);
+
+    ctx.fillStyle = '#536d7a';
+    ctx.fillRect(x - hitchLength, baseY - bodyHeight * 0.4, hitchLength, 4);
+
+    drawWheel(x + 14, baseY - 4, 7);
+    drawWheel(x + bodyWidth - 18, baseY - 4, 7);
+  };
+
+  const drawTruck = (x, baseY, color) => {
+    const cabWidth = 52;
+    const cabHeight = 36;
+    const bedWidth = 94;
+    const bedHeight = 28;
+
+    ctx.fillStyle = '#394b59';
+    ctx.fillRect(x + cabWidth, baseY - bedHeight, bedWidth, bedHeight);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.fillRect(x + cabWidth + 6, baseY - bedHeight + 6, bedWidth - 12, bedHeight * 0.45);
+
+    ctx.fillStyle = color;
+    ctx.fillRect(x, baseY - cabHeight, cabWidth, cabHeight);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.fillRect(x + 6, baseY - cabHeight + 6, cabWidth - 18, cabHeight * 0.45);
+
+    drawWheel(x + 16, baseY - 6, 8);
+    drawWheel(x + cabWidth - 12, baseY - 6, 8);
+    drawWheel(x + cabWidth + 18, baseY - 4, 7);
+    drawWheel(x + cabWidth + bedWidth - 22, baseY - 4, 7);
+  };
+
+  drawTrailer(width * 0.15, groundY, '#5c7cfa');
+  drawTrailer(width * 0.15, groundY - 42, '#50c2f8');
+  drawTruck(width * 0.42, groundY, '#ffb74d');
 }
 
 function main() {
