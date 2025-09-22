@@ -271,7 +271,7 @@ canvas {
 }
 
 .canvas-overlay-top {
-  top: 74px;
+  top: 54px;
   flex-direction: column;
   align-items: center;
   gap: 0.18rem;
