@@ -1032,21 +1032,28 @@ function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel)
       ctx.fillStyle = beachGrad;
       ctx.fillRect(xStart, sargassumTop, xEnd - xStart, sargassumHeight);
 
-      const waveBase = sargassumTop + sargassumHeight * 0.65;
-      const waveAmplitude = sargassumHeight * 0.08;
-      const waveLength = Math.max(30, (xEnd - xStart) / 5);
+      const waveTop = sargassumTop + sargassumHeight * 0.55;
+      const waveBottom = Math.min(beachBottom, waveTop + sargassumHeight * 0.45);
+      const waveAmplitude = Math.max(2, (waveBottom - waveTop) * 0.35);
+      const waveLength = Math.max(30, (xEnd - xStart) / 4);
 
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-      ctx.lineWidth = 1.2;
       ctx.beginPath();
+      ctx.moveTo(xStart, waveBottom);
       for (let x = xStart; x <= xEnd; x += 3) {
-        const y = waveBase + Math.sin((x - xStart) / waveLength * Math.PI * 2) * waveAmplitude;
-        if (x === xStart) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
+        const y = waveTop + Math.sin((x - xStart) / waveLength * Math.PI * 2) * waveAmplitude;
+        ctx.lineTo(x, y);
       }
+      ctx.lineTo(xEnd, waveBottom);
+      ctx.closePath();
+
+      const waveFill = ctx.createLinearGradient(0, waveTop, 0, waveBottom);
+      waveFill.addColorStop(0, 'rgba(142, 226, 255, 0.55)');
+      waveFill.addColorStop(1, 'rgba(64, 191, 255, 0.4)');
+      ctx.fillStyle = waveFill;
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(64, 191, 255, 0.65)';
+      ctx.lineWidth = 1.1;
       ctx.stroke();
       ctx.restore();
 
