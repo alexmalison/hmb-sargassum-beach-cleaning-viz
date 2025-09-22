@@ -543,9 +543,6 @@ function createLayout() {
     </section>
     <section class="simulation">
       <div class="simulation-body">
-        <div class="fleet-canvas-container">
-          <canvas id="fleetCanvas" width="220" height="200"></canvas>
-        </div>
         <div class="canvas-container">
           <canvas id="beachCanvas" width="720" height="336"></canvas>
           <div class="canvas-overlay canvas-overlay-top">
@@ -575,7 +572,6 @@ function createLayout() {
 
   return {
     canvas: document.querySelector('#beachCanvas'),
-    fleetCanvas: document.querySelector('#fleetCanvas'),
     derivedList: document.querySelector('#derivedMetrics'),
     status: document.querySelector('#status'),
     timeLabel: document.querySelector('#timeLabel'),
@@ -1461,84 +1457,7 @@ function updateStatus(element, params, derived) {
   element.textContent = '';
 }
 
-function drawFleetCanvas(canvas) {
-  if (!canvas) {
-    return;
-  }
-
-  const ctx = canvas.getContext('2d');
-  const { width, height } = canvas;
-  ctx.clearRect(0, 0, width, height);
-
-  const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
-  skyGrad.addColorStop(0, 'rgba(15, 32, 52, 0.92)');
-  skyGrad.addColorStop(0.6, 'rgba(27, 50, 78, 0.95)');
-  skyGrad.addColorStop(1, 'rgba(18, 42, 65, 0.97)');
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, width, height);
-
-  const groundY = height - 36;
-  const groundGrad = ctx.createLinearGradient(0, groundY, 0, height);
-  groundGrad.addColorStop(0, 'rgba(71, 55, 34, 0.9)');
-  groundGrad.addColorStop(1, 'rgba(51, 41, 25, 0.96)');
-  ctx.fillStyle = groundGrad;
-  ctx.fillRect(0, groundY, width, height - groundY);
-
-  const drawWheel = (cx, cy, radius) => {
-    ctx.fillStyle = '#1a1f2a';
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius * 0.45, 0, Math.PI * 2);
-    ctx.fill();
-  };
-
-  const drawTrailer = (x, baseY, color) => {
-    const bodyWidth = 80;
-    const bodyHeight = 30;
-    const hitchLength = 12;
-
-    ctx.fillStyle = color;
-    ctx.fillRect(x, baseY - bodyHeight, bodyWidth, bodyHeight);
-
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-    ctx.fillRect(x + 6, baseY - bodyHeight + 6, bodyWidth - 12, bodyHeight * 0.45);
-
-    ctx.fillStyle = '#536d7a';
-    ctx.fillRect(x - hitchLength, baseY - bodyHeight * 0.4, hitchLength, 4);
-
-    drawWheel(x + 14, baseY - 4, 7);
-    drawWheel(x + bodyWidth - 18, baseY - 4, 7);
-  };
-
-  const drawTruck = (x, baseY, color) => {
-    const cabWidth = 52;
-    const cabHeight = 36;
-    const bedWidth = 94;
-    const bedHeight = 28;
-
-    ctx.fillStyle = '#394b59';
-    ctx.fillRect(x + cabWidth, baseY - bedHeight, bedWidth, bedHeight);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.fillRect(x + cabWidth + 6, baseY - bedHeight + 6, bedWidth - 12, bedHeight * 0.45);
-
-    ctx.fillStyle = color;
-    ctx.fillRect(x, baseY - cabHeight, cabWidth, cabHeight);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-    ctx.fillRect(x + 6, baseY - cabHeight + 6, cabWidth - 18, cabHeight * 0.45);
-
-    drawWheel(x + 16, baseY - 6, 8);
-    drawWheel(x + cabWidth - 12, baseY - 6, 8);
-    drawWheel(x + cabWidth + 18, baseY - 4, 7);
-    drawWheel(x + cabWidth + bedWidth - 22, baseY - 4, 7);
-  };
-
-  drawTrailer(width * 0.15, groundY, '#5c7cfa');
-  drawTrailer(width * 0.15, groundY - 42, '#50c2f8');
-  drawTruck(width * 0.42, groundY, '#ffb74d');
-}
+// Removed fleetCanvas and its drawing routine
 
 function main() {
   const params = { ...DEFAULT_PARAMS };
