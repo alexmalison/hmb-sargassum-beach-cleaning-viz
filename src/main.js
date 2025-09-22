@@ -521,6 +521,7 @@ function createLayout() {
           </div>
           <div class="sim-secondary">
             <span id="loadedLabel" class="sim-stat">Loaded 0.0 m³</span>
+            <span class="sim-sep">•</span>
             <span id="idleLabel" class="sim-stat">Crew idle time 00:00:00</span>
           </div>
         </div>
