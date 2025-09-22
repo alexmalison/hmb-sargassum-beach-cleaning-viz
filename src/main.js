@@ -511,11 +511,17 @@ function createLayout() {
         <div class="canvas-overlay canvas-overlay-top">
           <div class="sim-controls">
             <button type="button" id="toggleRun" class="toggle-run">Pause</button>
-            <span id="timeLabel" class="sim-stat">Sim time 00:00:00</span>
-            <div class="speed-slider">
-              <input type="range" id="speedSlider" min="1" max="60" step="1" />
-              <span id="speedValue">1 s → 1 min</span>
+            <div class="sim-timing">
+              <span id="timeLabel" class="sim-stat">Sim time 00:00:00</span>
+              <div class="speed-slider">
+                <input type="range" id="speedSlider" min="1" max="60" step="1" />
+                <span id="speedValue">1 s → 1 min</span>
+              </div>
             </div>
+          </div>
+          <div class="sim-secondary">
+            <span id="loadedLabel" class="sim-stat">Loaded 0.0 m³</span>
+            <span id="idleLabel" class="sim-stat">Crew idle time 00:00:00</span>
           </div>
         </div>
         <div class="canvas-overlay canvas-overlay-bottom">
@@ -530,7 +536,11 @@ function createLayout() {
     derivedList: document.querySelector('#derivedMetrics'),
     status: document.querySelector('#status'),
     timeLabel: document.querySelector('#timeLabel'),
+    loadedLabel: document.querySelector('#loadedLabel'),
+    idleLabel: document.querySelector('#idleLabel'),
     toggleButton: document.querySelector('#toggleRun'),
+    loadedLabel: document.querySelector('#loadedLabel'),
+    idleLabel: document.querySelector('#idleLabel'),
     detailsLabel: document.querySelector('#detailsLabel'),
     derivedSection: document.querySelector('#derivedSection'),
     derivedToggle: document.querySelector('#toggleDerived'),
@@ -726,7 +736,7 @@ function renderDerived(listEl, derived, totals) {
   });
 }
 
-function createAnimator(canvas, timeLabel, detailsLabel) {
+function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel) {
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
   const height = canvas.height;
@@ -933,12 +943,18 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
       maximumFractionDigits: 1,
     });
     lastLoadedLabel = `Loaded ${volumeLabel} m³`;
+    if (loadedLabel) {
+      loadedLabel.textContent = lastLoadedLabel;
+    }
   }
 
   function updateIdle(simMinutes) {
     const busyMinutes = getBusyMinutesUpTo(simMinutes);
     const idleMinutes = Math.max(0, simMinutes - busyMinutes);
     lastIdleLabel = `Crew idle time ${formatClock(idleMinutes)}`;
+    if (idleLabel) {
+      idleLabel.textContent = lastIdleLabel;
+    }
   }
 
   function drawBackground() {
@@ -1415,6 +1431,8 @@ function main() {
     derivedList,
     status,
     timeLabel,
+    loadedLabel,
+    idleLabel,
     toggleButton,
     detailsLabel,
     derivedSection,
@@ -1422,7 +1440,7 @@ function main() {
     atvOverrideInput,
     atvOverrideHint,
   } = createLayout();
-  const animator = createAnimator(canvas, timeLabel, detailsLabel);
+  const animator = createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel);
   let derivedCollapsed = false;
 
   function refresh() {
