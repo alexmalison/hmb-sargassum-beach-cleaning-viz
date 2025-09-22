@@ -1024,13 +1024,30 @@ function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel)
         return;
       }
 
-      const fullBeachGrad = ctx.createLinearGradient(xStart, beachTop, xEnd, beachBottom);
-      fullBeachGrad.addColorStop(0, 'rgba(236, 221, 180, 0.92)');
-      fullBeachGrad.addColorStop(0.6, 'rgba(226, 205, 156, 0.9)');
-      fullBeachGrad.addColorStop(1, 'rgba(212, 186, 134, 0.88)');
+      const beachGrad = ctx.createLinearGradient(xStart, beachTop, xEnd, beachBottom);
+      beachGrad.addColorStop(0, 'rgba(236, 221, 180, 0.92)');
+      beachGrad.addColorStop(0.6, 'rgba(226, 205, 156, 0.9)');
+      beachGrad.addColorStop(1, 'rgba(212, 186, 134, 0.88)');
       ctx.save();
-      ctx.fillStyle = fullBeachGrad;
+      ctx.fillStyle = beachGrad;
       ctx.fillRect(xStart, sargassumTop, xEnd - xStart, sargassumHeight);
+
+      const waveBase = sargassumTop + sargassumHeight * 0.65;
+      const waveAmplitude = sargassumHeight * 0.08;
+      const waveLength = Math.max(30, (xEnd - xStart) / 5);
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      for (let x = xStart; x <= xEnd; x += 3) {
+        const y = waveBase + Math.sin((x - xStart) / waveLength * Math.PI * 2) * waveAmplitude;
+        if (x === xStart) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.stroke();
       ctx.restore();
 
       if (simMinutes >= cleaned) {
