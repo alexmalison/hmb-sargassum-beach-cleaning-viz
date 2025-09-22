@@ -993,12 +993,8 @@ function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel)
     ctx.font = '16px "Inter", sans-serif';
     const labelY = Math.min(height - 12, beachBottom + 28);
     const beachLengthLabel = formatNumber(paramsRef.beachLengthM, { maximumFractionDigits: 0 });
-    const footerSegments = [
-      `Beach length = ${beachLengthLabel} m`,
-      lastLoadedLabel,
-      lastIdleLabel,
-    ];
-    ctx.fillText(footerSegments.join('   •   '), width / 2, labelY);
+    const footerText = `Beach length = ${beachLengthLabel} m`;
+    ctx.fillText(footerText, width / 2, labelY);
     ctx.restore();
   }
 
