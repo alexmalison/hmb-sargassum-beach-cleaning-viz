@@ -247,7 +247,7 @@
 
 canvas {
   width: min(720px, 100%);
-  height: min(420px, 60vh);
+  height: min(336px, 48vh);
   background: linear-gradient(180deg, rgba(244, 246, 248, 0.12) 0%, rgba(39, 82, 138, 0.35) 100%);
   border-radius: 16px;
   border: 1px solid rgba(244, 246, 248, 0.18);
@@ -271,7 +271,7 @@ canvas {
 }
 
 .canvas-overlay-top {
-  top: 96px;
+  top: 74px;
   flex-direction: column;
   align-items: center;
   gap: 0.18rem;
@@ -375,6 +375,6 @@ canvas {
   }
 
   canvas {
-    height: min(320px, 45vh);
+    height: min(256px, 40vh);
   }
 }
