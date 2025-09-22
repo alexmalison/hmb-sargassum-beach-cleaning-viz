@@ -963,9 +963,8 @@ function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel)
     ctx.fillRect(0, 0, width, height);
 
     const duneGrad = ctx.createLinearGradient(0, 0, 0, beachTop);
-    duneGrad.addColorStop(0, 'rgba(236, 221, 180, 0.92)');
-    duneGrad.addColorStop(0.6, 'rgba(226, 205, 156, 0.9)');
-    duneGrad.addColorStop(1, 'rgba(212, 186, 134, 0.88)');
+    duneGrad.addColorStop(0, 'rgba(214, 196, 148, 0.82)');
+    duneGrad.addColorStop(1, 'rgba(198, 174, 122, 0.78)');
     ctx.fillStyle = duneGrad;
     ctx.fillRect(0, 0, width, beachTop);
 
