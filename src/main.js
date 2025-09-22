@@ -12,7 +12,7 @@ const DEFAULT_PARAMS = {
   trailerCapacityM3: 2.0,
   timePerWorkerLoadM3Minutes: 25,
   disposalTruckCount: 1,
-  disposalTruckCapacityM3: 8.0,
+  disposalTruckCapacityM3: 7.0,
   disposalDistanceM: 2000,
   disposalTruckSpeedKmh: 20,
   atvSpeedKmh: 3,
