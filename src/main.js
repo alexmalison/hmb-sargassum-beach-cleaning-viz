@@ -1006,9 +1006,10 @@ function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel)
     const sargassumTop = beachBottom - sargassumHeight;
 
     ctx.save();
-    const baseSand = ctx.createLinearGradient(0, sargassumTop, 0, sargassumTop + sargassumHeight);
-    baseSand.addColorStop(0, 'rgba(214, 196, 148, 0.84)');
-    baseSand.addColorStop(1, 'rgba(198, 174, 122, 0.82)');
+    const baseSand = ctx.createLinearGradient(0, beachTop, 0, beachBottom);
+    baseSand.addColorStop(0, 'rgba(236, 221, 180, 0.92)');
+    baseSand.addColorStop(0.6, 'rgba(226, 205, 156, 0.9)');
+    baseSand.addColorStop(1, 'rgba(212, 186, 134, 0.88)');
     ctx.fillStyle = baseSand;
     ctx.fillRect(0, sargassumTop, width, sargassumHeight);
     ctx.restore();
@@ -1023,36 +1024,13 @@ function createAnimator(canvas, timeLabel, loadedLabel, idleLabel, detailsLabel)
         return;
       }
 
-      const fullBeachGrad = ctx.createLinearGradient(xStart, sargassumTop, xEnd, beachBottom);
-      fullBeachGrad.addColorStop(0, 'rgba(214, 196, 148, 0.82)');
-      fullBeachGrad.addColorStop(0.45, 'rgba(200, 178, 130, 0.82)');
-      fullBeachGrad.addColorStop(0.65, 'rgba(170, 198, 188, 0.65)');
-      fullBeachGrad.addColorStop(1, 'rgba(118, 213, 237, 0.78)');
+      const fullBeachGrad = ctx.createLinearGradient(xStart, beachTop, xEnd, beachBottom);
+      fullBeachGrad.addColorStop(0, 'rgba(236, 221, 180, 0.92)');
+      fullBeachGrad.addColorStop(0.6, 'rgba(226, 205, 156, 0.9)');
+      fullBeachGrad.addColorStop(1, 'rgba(212, 186, 134, 0.88)');
       ctx.save();
       ctx.fillStyle = fullBeachGrad;
       ctx.fillRect(xStart, sargassumTop, xEnd - xStart, sargassumHeight);
-
-      const aquaGrad = ctx.createLinearGradient(0, sargassumTop + sargassumHeight * 0.45, 0, beachBottom);
-      aquaGrad.addColorStop(0, 'rgba(118, 213, 237, 0.35)');
-      aquaGrad.addColorStop(1, 'rgba(64, 191, 255, 0.55)');
-      ctx.fillStyle = aquaGrad;
-      ctx.fillRect(xStart, sargassumTop + sargassumHeight * 0.45, xEnd - xStart, sargassumHeight * 0.55);
-
-      const waveBaseline = beachBottom - sargassumHeight * 0.35;
-      const waveAmplitude = sargassumHeight * 0.12;
-      const waveLength = Math.max(40, (xEnd - xStart) / 4);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      for (let x = xStart; x <= xEnd; x += 4) {
-        const y = waveBaseline + Math.sin((x - xStart) / waveLength * Math.PI * 2) * waveAmplitude;
-        if (x === xStart) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-      }
-      ctx.stroke();
       ctx.restore();
 
       if (simMinutes >= cleaned) {
