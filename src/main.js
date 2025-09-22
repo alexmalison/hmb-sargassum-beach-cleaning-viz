@@ -967,8 +967,8 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(padding, beachBottom);
-    ctx.lineTo(width - padding, beachBottom);
+    ctx.moveTo(0, beachBottom);
+    ctx.lineTo(width, beachBottom);
     ctx.stroke();
 
     ctx.save();
@@ -997,7 +997,7 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     baseSand.addColorStop(0, 'rgba(214, 196, 148, 0.84)');
     baseSand.addColorStop(1, 'rgba(198, 174, 122, 0.82)');
     ctx.fillStyle = baseSand;
-    ctx.fillRect(padding, sargassumTop, width - padding * 2, sargassumHeight);
+    ctx.fillRect(0, sargassumTop, width, sargassumHeight);
     ctx.restore();
 
     simulation.loadStates.forEach((state) => {
@@ -1143,7 +1143,7 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.setLineDash([6, 8]);
 
     simulation.loadMarkers.forEach((distance) => {
-      const x = padding + (distance / simulation.beachLength) * (width - padding * 2);
+      const x = (distance / simulation.beachLength) * width;
       ctx.beginPath();
       ctx.moveTo(x, beachTop);
       ctx.lineTo(x, beachBottom);
@@ -1313,7 +1313,7 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
       const { position, phase, loadId, direction, progress } = getAtvState(segments, simMinutes, prevDirection);
       orientationByAtv[index] = direction || prevDirection || 1;
       const color = ATV_COLORS[index % ATV_COLORS.length];
-      const x = padding + (position / simulation.beachLength) * (width - padding * 2);
+      const x = Math.max(0, Math.min(width, (position / simulation.beachLength) * width));
       const y = beachBottom - 30 - (index * 18);
 
       const epsilon = 0.001;
