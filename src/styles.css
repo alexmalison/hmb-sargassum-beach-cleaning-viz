@@ -316,17 +316,18 @@ canvas {
 
 .sim-controls {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
+  gap: 1rem;
+  width: 100%;
 }
 
 .sim-timing {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.6rem;
 }
 
 .sim-secondary {
