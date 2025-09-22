@@ -987,7 +987,7 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
   }
 
   function drawSargassum(simMinutes) {
-    const widthAvailable = width - padding * 2;
+    const widthAvailable = width;
     const beachHeight = beachBottom - beachTop;
     const sargassumHeight = beachHeight * 0.25;
     const sargassumTop = beachBottom - sargassumHeight;
@@ -1001,8 +1001,8 @@ function createAnimator(canvas, timeLabel, detailsLabel) {
     ctx.restore();
 
     simulation.loadStates.forEach((state) => {
-      const xStart = padding + (state.startPosM / simulation.beachLength) * widthAvailable;
-      const xEnd = padding + (state.endPosM / simulation.beachLength) * widthAvailable;
+      const xStart = (state.startPosM / simulation.beachLength) * widthAvailable;
+      const xEnd = (state.endPosM / simulation.beachLength) * widthAvailable;
       const arrival = state.arrivalMin;
       const cleaned = state.cleanedAtMinute;
 
